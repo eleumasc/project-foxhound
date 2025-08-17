@@ -412,7 +412,7 @@ nsresult MarkTaintSourceAttribute(nsAString &str, const char* name, const mozill
       str.Taint().overlay(0, str.Length(),*taintList.begin());
     }
   }
-  if (isSourceActive(name)) {
+  if (nsContentUtils::IsInitialized() && isSourceActive(name)) {
     return MarkTaintSource(str, GetTaintOperation(nsContentUtils::GetCurrentJSContext(), name, element, str, attr));
   }
   return NS_OK;
@@ -428,7 +428,7 @@ nsresult MarkTaintSourceAttribute(mozilla::dom::DOMString &str, const char* name
       str.Taint().overlay(0, str.Length(),*taintList.begin());
     }
   }
-  if (isSourceActive(name)) {
+  if (nsContentUtils::IsInitialized() && isSourceActive(name)) {
     nsAutoString nsStr;
     str.ToString(nsStr);
     return MarkTaintSource(str, GetTaintOperation(nsContentUtils::GetCurrentJSContext(), name, element, nsStr, attr));

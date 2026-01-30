@@ -6748,7 +6748,7 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
   UTF_8_ENCODING->DecodeWithoutBOMHandling(cookieString, aCookie);
 
   // Foxhound: document.cookie source.
-  MarkTaintSource(aCookie, "document.cookie");
+  MarkTaintSourceCookieString(aCookie, "document.cookie");
 }
 
 void Document::SetCookie(const nsAString& aCookieString, ErrorResult& aRv) {
@@ -6784,9 +6784,6 @@ void Document::SetCookie(const nsAString& aCookieString, ErrorResult& aRv) {
   if (!service) {
     return;
   }
-
-  // Foxhound: document.cookie sink.
-  ReportTaintSink(aCookieString, "document.cookie");
 
   NS_ConvertUTF16toUTF8 cookieString(aCookieString);
 
@@ -6828,6 +6825,9 @@ void Document::SetCookie(const nsAString& aCookieString, ErrorResult& aRv) {
   if (!cookie) {
     return;
   }
+
+  // Foxhound: document.cookie sink.
+  ReportTaintSink(aCookieString, "document.cookie", NS_ConvertUTF8toUTF16(cookie->Name()));
 
   bool thirdParty = true;
   nsPIDOMWindowInner* innerWindow = GetInnerWindow();

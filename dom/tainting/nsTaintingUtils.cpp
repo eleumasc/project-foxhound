@@ -462,6 +462,45 @@ nsresult MarkTaintSourceAttribute(mozilla::dom::DOMString &str, const char* name
   return NS_OK;
 }
 
+nsresult MarkTaintSourceCookieString(nsAString& aCookieString, const char* name) {
+  auto* cx = nsContentUtils::GetCurrentJSContext();
+
+  int32_t pos = 0;
+  int32_t len = aCookieString.Length();
+
+  while (pos < len) {
+    int32_t start = pos;
+    int32_t end = aCookieString.FindChar(';', start);
+    if (end == kNotFound) {
+      end = len;
+    }
+
+    pos = end < len ? end + 2 : end;  // next cookie is after ';' and ' '
+
+    int32_t sep = aCookieString.FindChar('=', start);
+    if (sep == kNotFound || sep > end) {
+      sep = kNotFound;
+    }
+
+    nsTArray<nsString> args;
+    int32_t valueStart;
+    if (sep != kNotFound) {
+      args.AppendElement(Substring(aCookieString, start, sep - start));
+      valueStart = sep + 1;
+    } else {
+      args.AppendElement(VoidString());
+      valueStart = start;
+    }
+
+    TaintOperation op = GetTaintOperation(cx, name, args);
+    op.setSource();
+    op.setNative();
+    aCookieString.Taint().overlay(valueStart, end, op);
+  }
+
+  return NS_OK;
+}
+
 nsresult ReportTaintSink(JSContext *cx, const nsAString &str, const char* name, const nsAString &arg)
 {
   if (!str.isTainted()) {

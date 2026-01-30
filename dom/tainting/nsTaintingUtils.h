@@ -71,6 +71,8 @@ nsresult MarkTaintSource(JSContext* aCx, JSString* str, const char* name, const 
 
 nsresult MarkTaintSource(TaintFlow &flow, const char* name, const nsAString &arg);
 
+nsresult MarkTaintSourceCookieString(nsAString& aCookieString, const char* name);
+
 // Foxhound: Report taint flows into DOM related sinks.
 nsresult ReportTaintSink(JSContext *cx, const nsAString &str, const char* name);
 

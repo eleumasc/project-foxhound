@@ -53,7 +53,7 @@
 #include "js/ContextOptions.h"  // JS::ContextOptions{,Ref}
 #include "js/Conversions.h"
 #include "js/Date.h"  // JS::GetReduceMicrosecondTimePrecisionCallback
-#include "js/EnvironmentChain.h"       // JS::EnvironmentChain
+#include "js/EnvironmentChain.h"  // JS::EnvironmentChain
 #include "js/ErrorInterceptor.h"
 #include "js/ErrorReport.h"           // JSErrorBase
 #include "js/experimental/JitInfo.h"  // JSJitInfo
@@ -3787,10 +3787,10 @@ JS_PUBLIC_API bool JS_ParseJSONWithReviver(JSContext* cx, HandleString str,
   }
 
   return stableChars.isLatin1()
-             ? ParseJSONWithReviver(cx, stableChars.latin1Range(), reviver,
-                                    vp, str->taint())
-             : ParseJSONWithReviver(cx, stableChars.twoByteRange(), reviver,
-                                    vp, str->taint());
+             ? ParseJSONWithReviver(cx, stableChars.latin1Range(), reviver, vp,
+                                    str->taint())
+             : ParseJSONWithReviver(cx, stableChars.twoByteRange(), reviver, vp,
+                                    str->taint());
 }
 
 /************************************************************************/
@@ -4948,37 +4948,30 @@ JS_PUBLIC_API void JS::detail::AssertArgumentsAreSane(JSContext* cx,
 #endif /* JS_DEBUG */
 
 // Foxhound: Taint related JSAPI code.
-JS_PUBLIC_API const StringTaint&
-JS_GetStringTaint(const JSString* str)
-{
+JS_PUBLIC_API const StringTaint& JS_GetStringTaint(const JSString* str) {
   return str->taint();
 }
 
-JS_PUBLIC_API const StringTaint&
-JS_GetStringTaint(const JSLinearString* str)
-{
+JS_PUBLIC_API const StringTaint& JS_GetStringTaint(const JSLinearString* str) {
   return str->taint();
 }
 
-JS_PUBLIC_API void
-JS_SetStringTaint(JSContext* cx, JSString* str, const StringTaint& taint)
-{
+JS_PUBLIC_API void JS_SetStringTaint(JSContext* cx, JSString* str,
+                                     const StringTaint& taint) {
   if (str) {
     str->setTaint(cx, taint);
   }
 }
 
-JS_PUBLIC_API void
-JS_SetTaint(JSContext* cx, JS::MutableHandleValue value, const StringTaint& taint)
-{
+JS_PUBLIC_API void JS_SetTaint(JSContext* cx, JS::MutableHandleValue value,
+                               const StringTaint& taint) {
   if (value.isString()) {
     JS_SetStringTaint(cx, value.toString(), taint);
   }
 }
 
-JS_PUBLIC_API void
-JS_MarkTaintSource(JSContext* cx, JSString* str, const TaintOperation& op)
-{
+JS_PUBLIC_API void JS_MarkTaintSource(JSContext* cx, JSString* str,
+                                      const TaintOperation& op) {
   if (!str->isTainted()) {
     JS_SetStringTaint(cx, str, SafeStringTaint(0, str->length(), op));
   } else {
@@ -4986,9 +4979,9 @@ JS_MarkTaintSource(JSContext* cx, JSString* str, const TaintOperation& op)
   }
 }
 
-JS_PUBLIC_API void
-JS_MarkTaintSource(JSContext* cx, JS::MutableHandleValue value, const TaintOperation& op)
-{
+JS_PUBLIC_API void JS_MarkTaintSource(JSContext* cx,
+                                      JS::MutableHandleValue value,
+                                      const TaintOperation& op) {
   if (value.isString()) {
     // If we have a string, set taint directly
     JS_MarkTaintSource(cx, value.toString(), op);
@@ -4996,7 +4989,7 @@ JS_MarkTaintSource(JSContext* cx, JS::MutableHandleValue value, const TaintOpera
     // If it is an object, loop over contents
     // This function is used for convenience to taint all
     // strings in an object like '{ payload : "hello!" }'
-    NativeObject *obj = MaybeNativeObject(value.toObjectOrNull());
+    NativeObject* obj = MaybeNativeObject(value.toObjectOrNull());
     if (obj) {
       for (size_t i = 0; i < obj->slotSpan(); i++) {
         JS::Value slot = obj->getSlot(i);
@@ -5008,56 +5001,50 @@ JS_MarkTaintSource(JSContext* cx, JS::MutableHandleValue value, const TaintOpera
   }
 }
 
-JS_PUBLIC_API TaintOperation
-JS_GetTaintOperation(JSContext* cx, const char* sink, JS::HandleValue arg)
-{
+JS_PUBLIC_API TaintOperation JS_GetTaintOperation(JSContext* cx,
+                                                  const char* sink,
+                                                  JS::HandleValue arg) {
   return TaintOperationFromContext(cx, sink, false, arg, false);
 }
 
-JS_PUBLIC_API TaintOperation
-JS_GetTaintOperationFullArgs(JSContext* cx, const char* sink, JS::HandleValue arg)
-{
+JS_PUBLIC_API TaintOperation JS_GetTaintOperationFullArgs(JSContext* cx,
+                                                          const char* sink,
+                                                          JS::HandleValue arg) {
   return TaintOperationFromContext(cx, sink, false, arg, true);
 }
 
-JS_PUBLIC_API TaintOperation
-JS_GetTaintOperation(JSContext* cx, const char* sink)
-{
+JS_PUBLIC_API TaintOperation JS_GetTaintOperation(JSContext* cx,
+                                                  const char* sink) {
   return TaintOperationFromContext(cx, sink, false);
 }
 
-JS_PUBLIC_API TaintLocation
-JS_GetTaintLocation(JSContext* cx)
-{
+JS_PUBLIC_API TaintLocation JS_GetTaintLocation(JSContext* cx) {
   return TaintLocationFromContext(cx);
 }
 
-JS_PUBLIC_API void
-JS_SetFallbackTaintLocation(JSContext* cx, const TaintLocation& taintLocation) {
+JS_PUBLIC_API void JS_SetFallbackTaintLocation(
+    JSContext* cx, const TaintLocation& taintLocation) {
   cx->setFallbackTaintLocation(taintLocation);
 }
 
-JS_PUBLIC_API void
-JS_ReportTaintSink(JSContext* cx, JS::HandleValue val, const char* sink)
-{
+JS_PUBLIC_API void JS_ReportTaintSink(JSContext* cx, JS::HandleValue val,
+                                      const char* sink) {
   RootedValue arg(cx);
   arg.setNull();
   JS_ReportTaintSink(cx, val, sink, arg);
 }
 
-JS_PUBLIC_API void
-JS_ReportTaintSink(JSContext* cx, JS::HandleString str, const char* sink)
-{
+JS_PUBLIC_API void JS_ReportTaintSink(JSContext* cx, JS::HandleString str,
+                                      const char* sink) {
   RootedValue arg(cx);
   arg.setNull();
   JS_ReportTaintSink(cx, str, sink, arg);
 }
 
-JS_PUBLIC_API void
-JS_ReportTaintSink(JSContext* cx, JS::HandleValue value, const char* sink, JS::HandleValue arg)
-{
+JS_PUBLIC_API void JS_ReportTaintSink(JSContext* cx, JS::HandleValue value,
+                                      const char* sink, JS::HandleValue arg) {
   if (value.isString()) {
-    JSString *str = value.toString();
+    JSString* str = value.toString();
     if (str) {
       JS::RootedString strobj(cx, str);
       JS_ReportTaintSink(cx, strobj, sink, arg);
@@ -5065,9 +5052,8 @@ JS_ReportTaintSink(JSContext* cx, JS::HandleValue value, const char* sink, JS::H
   }
 }
 
-JS_PUBLIC_API void
-JS_ReportTaintSink(JSContext* cx, JS::HandleString str, const char* sink, JS::HandleValue arg)
-{
+JS_PUBLIC_API void JS_ReportTaintSink(JSContext* cx, JS::HandleString str,
+                                      const char* sink, JS::HandleValue arg) {
   const unsigned TAINT_REPORT_FUNCTION_SLOT = 5;
 
   if (!str->isTainted()) {
@@ -5079,19 +5065,22 @@ JS_ReportTaintSink(JSContext* cx, JS::HandleString str, const char* sink, JS::Ha
   // Print a message to stdout. Also include the current JS backtrace.
   auto& firstRange = *str->taint().begin();
 
-  std::cerr << "!!! Tainted flow into " << sink << " from " << firstRange.flow().source().name() << " !!!" << std::endl;
+  std::cerr << "!!! Tainted flow into " << sink << " from "
+            << firstRange.flow().source().name() << " !!!" << std::endl;
   // DumpBacktrace(cx);
 
   // Report a warning to show up on the web console
-  JS_ReportWarningUTF8(cx, "Tainted flow from %s into %s!", firstRange.flow().source().name(), sink);
+  JS_ReportWarningUTF8(cx, "Tainted flow from %s into %s!",
+                       firstRange.flow().source().name(), sink);
 
   // Extend the taint flow to include the sink function
-  str->taint().extend(TaintOperationFromContext(cx, sink, true, arg, true));
+  str->taint().extend(TaintOperation(sink, true, TaintLocationFromContext(cx),
+                                     taintargs_jsstring(cx, str)));
 
   // Trigger a custom event that can be caught by an extension.
-  // To simplify things, this part is implemented in JavaScript. Since we don't want to recompile
-  // this code everytime we detect a tainted flow, we store the compiled function into a reserved
-  // slot of the current global object.
+  // To simplify things, this part is implemented in JavaScript. Since we don't
+  // want to recompile this code everytime we detect a tainted flow, we store
+  // the compiled function into a reserved slot of the current global object.
   RootedFunction report(cx);
 
   JS::Rooted<JSObject*> global(cx, cx->global());
@@ -5101,58 +5090,59 @@ JS_ReportTaintSink(JSContext* cx, JS::HandleString str, const char* sink, JS::Ha
     // Need to compile.
     const char* argnames[3] = {"str", "sink", "stack"};
     const char* funbody =
-      "if (typeof window !== 'undefined' && typeof document !== 'undefined') {\n"
-      "    var t = window;\n"
-      "    if (location.protocol == 'javascript:' || location.protocol == 'data:' || location.protocol == 'about:') {\n"
-      "        t = parent.window;\n"
-      "    }\n"
-      "    var pl;\n"
-      "    try {\n"
-      "        pl = parent.location.href;\n"
-      "    } catch (e) {\n"
-      "        pl = 'different origin';\n"
-      "    }\n"  
-      "    var timestamp = -1;\n"
-      "    try {\n"
-      "        timestamp = Date.now();\n"
-      "    } catch (e) {\n"
-      "        timestamp = -2;\n"
-      "    }\n"  
-      "    var e = document.createEvent('CustomEvent');\n"
-      "    var info = {\n"
-      "        subframe: t !== window,\n"
-      "        loc: location.href,\n"
-      "        parentloc: pl,\n"
-      "        referrer: document.referrer,\n"
-      "        str: str,\n"
-      "        sink: sink,\n"
-      "        stack: stack,\n"
-      "        timestamp: timestamp\n"
-      "    }\n"
-      "    e.initCustomEvent('__taintreport', true, false, info);\n"
-      "    t.dispatchEvent(e);\n"
-      "    return info;\n"
-      "} else {\n"
-      "    return undefined;\n"
-      "}\n";
+        "if (typeof window !== 'undefined' && typeof document !== 'undefined') "
+        "{\n"
+        "    var t = window;\n"
+        "    if (location.protocol == 'javascript:' || location.protocol == "
+        "'data:' || location.protocol == 'about:') {\n"
+        "        t = parent.window;\n"
+        "    }\n"
+        "    var pl;\n"
+        "    try {\n"
+        "        pl = parent.location.href;\n"
+        "    } catch (e) {\n"
+        "        pl = 'different origin';\n"
+        "    }\n"
+        "    var timestamp = -1;\n"
+        "    try {\n"
+        "        timestamp = Date.now();\n"
+        "    } catch (e) {\n"
+        "        timestamp = -2;\n"
+        "    }\n"
+        "    var e = document.createEvent('CustomEvent');\n"
+        "    var info = {\n"
+        "        subframe: t !== window,\n"
+        "        loc: location.href,\n"
+        "        parentloc: pl,\n"
+        "        referrer: document.referrer,\n"
+        "        str: str,\n"
+        "        sink: sink,\n"
+        "        stack: stack,\n"
+        "        timestamp: timestamp\n"
+        "    }\n"
+        "    e.initCustomEvent('__taintreport', true, false, info);\n"
+        "    t.dispatchEvent(e);\n"
+        "    return info;\n"
+        "} else {\n"
+        "    return undefined;\n"
+        "}\n";
     CompileOptions options(cx);
     options.setFile("taint_reporting.js");
 
     JS::EnvironmentChain emptyChain(cx, JS::SupportUnscopables::No);
-    report = CompileFunctionUtf8(cx, emptyChain,
-                                 options, "ReportTaintSink", 3,
+    report = CompileFunctionUtf8(cx, emptyChain, options, "ReportTaintSink", 3,
                                  argnames, funbody, strlen(funbody));
     MOZ_ASSERT(report);
 
     // Store the compiled function into the current global object.
-    JS_SetReservedSlot(global, TAINT_REPORT_FUNCTION_SLOT, ObjectValue(*report));
+    JS_SetReservedSlot(global, TAINT_REPORT_FUNCTION_SLOT,
+                       ObjectValue(*report));
   } else {
     report = JS_ValueToFunction(cx, slot);
   }
 
   RootedObject stack(cx);
-  if (!JS::CaptureCurrentStack(cx, &stack,
-                               JS::StackCapture(JS::AllFrames()))) {
+  if (!JS::CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::AllFrames()))) {
     JS_ReportErrorUTF8(cx, "Invalid stack object in CaptureCurrentStack!");
     return;
   }
@@ -5176,7 +5166,7 @@ JS_ReportTaintSink(JSContext* cx, JS::HandleString str, const char* sink, JS::Ha
 #endif
 
 // Enable with ac_add_options --enable-jitspew
-#if defined (JS_JITSPEW)
+#if defined(JS_JITSPEW)
   MaybeSpewStringTaint(cx, str, retVal);
 #endif
 }

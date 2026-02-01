@@ -21,7 +21,7 @@
 #include "mozilla/Utf8.h"
 #include "mozilla/Vector.h"
 
-#include <algorithm>    // std::{all_of,copy_n,enable_if,is_const,move}
+#include <algorithm>  // std::{all_of,copy_n,enable_if,is_const,move}
 #include <cstdint>
 #include <iterator>     // std::size
 #include <type_traits>  // std::is_same, std::is_unsigned
@@ -262,7 +262,8 @@ mozilla::Maybe<std::tuple<size_t, size_t>> JSString::encodeUTF8Partial(
   return mozilla::Some(std::make_tuple(totalRead, totalWritten));
 }
 
-#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || defined(JS_TAINTSPEW)
+#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || \
+    defined(JS_TAINTSPEW)
 template <typename CharT>
 /*static */
 void JSString::dumpCharsNoQuote(const CharT* s, size_t n,
@@ -863,7 +864,8 @@ bool JSRope::hash(uint32_t* outHash) const {
   return true;
 }
 
-#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || defined(JS_TAINTSPEW)
+#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || \
+    defined(JS_TAINTSPEW)
 void JSRope::dumpOwnRepresentationFields(js::JSONPrinter& json) const {
   json.beginObjectProperty("leftChild");
   leftChild()->dumpRepresentationFields(json);
@@ -1359,7 +1361,7 @@ JSString* js::ConcatStringsQuiet(
     }
     // Foxhound: Propagate taint
     if (str->length() > 0) {
-        str->setTaint(cx, newTaint);
+      str->setTaint(cx, newTaint);
     }
     return str;
   }
@@ -1368,29 +1370,26 @@ JSString* js::ConcatStringsQuiet(
   return JSRope::new_<allowGC>(cx, left, right, wholeLength, heap);
 }
 
-template JSString* js::ConcatStringsQuiet<CanGC>(JSContext* cx, HandleString left,
-                                            HandleString right,
-                                            gc::Heap heap);
+template JSString* js::ConcatStringsQuiet<CanGC>(JSContext* cx,
+                                                 HandleString left,
+                                                 HandleString right,
+                                                 gc::Heap heap);
 
-template JSString* js::ConcatStringsQuiet<NoGC>(JSContext* cx, JSString* const& left,
-                                           JSString* const& right,
-                                           gc::Heap heap);
+template JSString* js::ConcatStringsQuiet<NoGC>(JSContext* cx,
+                                                JSString* const& left,
+                                                JSString* const& right,
+                                                gc::Heap heap);
 
 template <AllowGC allowGC>
 JSString* js::ConcatStrings(
     JSContext* cx, typename MaybeRooted<JSString*, allowGC>::HandleType left,
-    typename MaybeRooted<JSString*, allowGC>::HandleType right,
-    gc::Heap heap) {
-
-  TaintOperation op("concat");
-  if ((left && right) && (left->taint().hasTaint() || right->taint().hasTaint())) {
-    op = JS::TaintOperationConcat(cx, "concat", true, left, right);
-  }
-  
+    typename MaybeRooted<JSString*, allowGC>::HandleType right, gc::Heap heap) {
   JSString* str = ConcatStringsQuiet<allowGC>(cx, left, right, heap);
 
-  if (str && str->taint().hasTaint()) {
-     str->taint().extend(op);
+  if (str && str->isTainted()) {
+    str->taint().extend(TaintOperation("concat", true,
+                                       TaintLocationFromContext(cx),
+                                       taintargs_jsstring(cx, str)));
   }
 
   return str;
@@ -1403,7 +1402,8 @@ template JSString* js::ConcatStrings<NoGC>(JSContext* cx, JSString* const& left,
                                            JSString* const& right,
                                            gc::Heap heap);
 
-#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || defined(JS_TAINTSPEW)
+#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || \
+    defined(JS_TAINTSPEW)
 void JSDependentString::dumpOwnRepresentationFields(
     js::JSONPrinter& json) const {
   json.property("baseOffset", baseOffset());
@@ -1835,7 +1835,8 @@ bool AutoStableStringChars::copyTwoByteChars(
 
 template <>
 bool JS::SourceText<char16_t>::initMaybeBorrowed(
-    JSContext* cx, JS::AutoStableStringChars& linearChars, const StringTaint& taint) {
+    JSContext* cx, JS::AutoStableStringChars& linearChars,
+    const StringTaint& taint) {
   MOZ_ASSERT(linearChars.isTwoByte(),
              "AutoStableStringChars must be initialized with char16_t");
 
@@ -1849,7 +1850,8 @@ bool JS::SourceText<char16_t>::initMaybeBorrowed(
 
 template <>
 bool JS::SourceText<char16_t>::initMaybeBorrowed(
-    JS::FrontendContext* fc, JS::AutoStableStringChars& linearChars, const StringTaint& taint) {
+    JS::FrontendContext* fc, JS::AutoStableStringChars& linearChars,
+    const StringTaint& taint) {
   MOZ_ASSERT(linearChars.isTwoByte(),
              "AutoStableStringChars must be initialized with char16_t");
 
@@ -1861,7 +1863,8 @@ bool JS::SourceText<char16_t>::initMaybeBorrowed(
   return initImpl(fc, chars, length, taint, ownership);
 }
 
-#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || defined(JS_TAINTSPEW)
+#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || \
+    defined(JS_TAINTSPEW)
 void JSAtom::dump(js::GenericPrinter& out) {
   out.printf("JSAtom* (%p) = ", (void*)this);
   this->JSString::dump(out);
@@ -1912,7 +1915,7 @@ JSLinearString* js::NewDependentString(JSContext* cx, JSString* baseArg,
     useInline = JSInlineString::lengthFits<char16_t>(length);
   } else {
     AutoCheckCannotGC nogc;
-    /* Foxhound: disabled 
+    /* Foxhound: disabled
     const Latin1Char* chars = base->latin1Chars(nogc) + start;
     if (JSLinearString* staticStr = cx->staticStrings().lookup(chars, length)) {
       return staticStr;
@@ -1929,9 +1932,11 @@ JSLinearString* js::NewDependentString(JSContext* cx, JSString* baseArg,
     // chars, which would be an awkward moving-GC hazard. Second, this makes
     // it more likely to have a very short string keep a very long string alive.
     if (base->hasTwoByteChars()) {
-      return NewInlineString<char16_t>(cx, rootedBase, start, length, nullptr, heap);
+      return NewInlineString<char16_t>(cx, rootedBase, start, length, nullptr,
+                                       heap);
     }
-    return NewInlineString<Latin1Char>(cx, rootedBase, start, length, nullptr, heap);
+    return NewInlineString<Latin1Char>(cx, rootedBase, start, length, nullptr,
+                                       heap);
   }
 
   return JSDependentString::new_(cx, base, start, length, heap);
@@ -2035,8 +2040,8 @@ static JSAtom* NewAtomDeflatedValidLength(JSContext* cx, const char16_t* s,
 
 template <AllowGC allowGC, typename CharT>
 JSLinearString* js::NewStringDontDeflate(
-  JSContext* cx, UniquePtr<CharT[], JS::FreePolicy> chars, size_t length,
-  gc::Heap heap) {
+    JSContext* cx, UniquePtr<CharT[], JS::FreePolicy> chars, size_t length,
+    gc::Heap heap) {
   if (JSLinearString* str = TryEmptyOrStaticString(cx, chars.get(), length)) {
     return str;
   }
@@ -2562,7 +2567,8 @@ JS_PUBLIC_API JSString* JS::NewStringFromKnownLiveUTF8Buffer(
   return ::NewStringFromUTF8Buffer(cx, buffer, length);
 }
 
-#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || defined(JS_CACHEIR_SPEW) || defined(JS_TAINTSPEW)
+#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW) || \
+    defined(JS_CACHEIR_SPEW) || defined(JS_TAINTSPEW)
 void JSExtensibleString::dumpOwnRepresentationFields(
     js::JSONPrinter& json) const {
   json.property("capacity", capacity());

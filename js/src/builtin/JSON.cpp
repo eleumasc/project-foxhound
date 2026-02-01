@@ -2154,8 +2154,9 @@ bool json_stringify(JSContext* cx, unsigned argc, Value* vp) {
 
     // Foxhound: Add stringify operation to taint flows.
     if (str->isTainted()) {
-      str->taint().extend(
-          TaintOperationFromContext(cx, "JSON.stringify", true));
+      str->taint().extend(TaintOperation("JSON.stringify", true,
+                                         TaintLocationFromContext(cx),
+                                         taintargs_jsstring(cx, str)));
     }
     args.rval().setString(str);
   } else {

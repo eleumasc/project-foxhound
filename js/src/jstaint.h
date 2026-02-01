@@ -22,7 +22,7 @@
 namespace JS {
 
 // Converts a char into the argument type for a taint operation.
-std::u16string taintarg_char(JSContext* cx, const char16_t str);
+std::u16string taintarg_char(JSContext* cx, const char16_t c);
 
 // Converts a raw char pointer into the argument type for a taint operation.
 std::u16string taintarg(JSContext* cx, const char16_t* str);
@@ -51,7 +51,7 @@ std::u16string taintarg(JSContext* cx, JS::HandleValue val,
 std::u16string taintarg(JSContext* cx, int32_t num);
 
 // Converts a JS Handle to a taint argument string.
-std::vector<std::u16string> taintargs(JSContext* cx, JS::HandleValue str,
+std::vector<std::u16string> taintargs(JSContext* cx, JS::HandleValue val,
                                       bool fullArgs);
 
 std::vector<std::u16string> taintargs(JSContext* cx, JS::HandleString str);
@@ -88,24 +88,24 @@ TaintOperation TaintOperationFromContext(JSContext* cx, const char* name,
 
 TaintOperation TaintOperationFromContextJSString(JSContext* cx,
                                                  const char* name, bool native,
-                                                 JSString* const& str);
+                                                 JSString* const& arg);
 
 TaintOperation TaintOperationFromContextJSString(JSContext* cx,
                                                  const char* name, bool native,
-                                                 JSString* const& str1,
-                                                 JSString* const& str2);
+                                                 JSString* const& arg1,
+                                                 JSString* const& arg2);
 
 TaintOperation TaintOperationFromContextJSString(
     JSContext* cx, const char* name, bool native,
-    const JSLinearString* const& str1, const JSLinearString* const& str2);
+    const JSLinearString* const& arg1, const JSLinearString* const& arg2);
 
 TaintOperation TaintOperationConcat(JSContext* cx, const char* name,
-                                    bool native, JS::HandleString str1,
-                                    JS::HandleString str2);
+                                    bool native, JS::HandleString arg1,
+                                    JS::HandleString arg2);
 
 TaintOperation TaintOperationConcat(JSContext* cx, const char* name,
-                                    bool native, JSString* const& str1,
-                                    JSString* const& str2);
+                                    bool native, JSString* const& arg1,
+                                    JSString* const& arg2);
 
 TaintOperation TaintOperationFromContext(JSContext* cx, const char* name,
                                          bool native);

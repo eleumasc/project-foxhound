@@ -28,8 +28,7 @@
 
 using namespace JS;
 
-const size_t max_length = 128;
-const size_t copy_length = (max_length >> 1) - 2;
+const size_t MAX_ARG_LENGTH = 128;
 
 static std::u16string ascii2utf16(const std::string& str) {
   std::u16string res;
@@ -37,8 +36,8 @@ static std::u16string ascii2utf16(const std::string& str) {
   return res;
 }
 
-std::u16string JS::taintarg_char(JSContext* cx, const char16_t ch) {
-  return std::u16string(1, ch);
+std::u16string JS::taintarg_char(JSContext* cx, const char16_t c) {
+  return std::u16string(1, c);
 }
 
 std::u16string JS::taintarg(JSContext* cx, const char16_t* str) {
@@ -69,20 +68,8 @@ std::u16string JS::taintarg(JSContext* cx, HandleString str) {
 
   js::UniquePtr<char16_t, JS::FreePolicy> buf(cx->pod_malloc<char16_t>(len));
   js::CopyChars(buf.get(), *linear);
-  if (len > max_length) {
-    // Foxhound was crashing after startup after copying start and end
-    // of the long strings, so disable copying here
-    // TODO: work out why windows doesn't like this...
-    // Update: this also caused issues with some URLs causing crashes
-    // I have a feeling there are some encoding/length issues
-#if 1  // defined(_WIN32)
-    return std::u16string(buf.get(), max_length);
-#else
-    std::u16string result(buf.get(), copy_length);
-    result.append(u"....");
-    result.append(std::u16string(buf.get(), len - copy_length, copy_length));
-    return result;
-#endif
+  if (len > MAX_ARG_LENGTH) {
+    return std::u16string(buf.get(), MAX_ARG_LENGTH);
   }
   return std::u16string(buf.get(), len);
 }
@@ -97,20 +84,8 @@ std::u16string JS::taintarg_jsstring(JSContext* cx,
 
   js::UniquePtr<char16_t, JS::FreePolicy> buf(cx->pod_malloc<char16_t>(len));
   js::CopyChars(buf.get(), *str);
-  if (len > max_length) {
-    // Foxhound was crashing after startup after copying start and end
-    // of the long strings, so disable copying here
-    // TODO: work out why windows doesn't like this...
-    // Update: this also caused issues with some URLs causing crashes
-    // I have a feeling there are some encoding/length issues
-#if 1  // defined(_WIN32)
-    return std::u16string(buf.get(), max_length);
-#else
-    std::u16string result(buf.get(), copy_length);
-    result.append(u"....");
-    result.append(std::u16string(buf.get(), len - copy_length, copy_length));
-    return result;
-#endif
+  if (len > MAX_ARG_LENGTH) {
+    return std::u16string(buf.get(), MAX_ARG_LENGTH);
   }
   return std::u16string(buf.get(), len);
 }
@@ -190,16 +165,16 @@ std::vector<std::u16string> JS::taintargs(JSContext* cx, HandleString str1,
   return args;
 }
 
-std::vector<std::u16string> JS::taintargs(JSContext* cx, HandleString arg) {
+std::vector<std::u16string> JS::taintargs(JSContext* cx, HandleString str) {
   std::vector<std::u16string> args;
-  args.push_back(taintarg(cx, arg));
+  args.push_back(taintarg(cx, str));
   return args;
 }
 
 std::vector<std::u16string> JS::taintargs_jsstring(JSContext* cx,
-                                                   JSString* const& arg) {
+                                                   JSString* const& str) {
   std::vector<std::u16string> args;
-  args.push_back(taintarg_jsstring(cx, arg));
+  args.push_back(taintarg_jsstring(cx, str));
   return args;
 }
 
@@ -337,31 +312,13 @@ TaintOperation JS::TaintOperationFromContextJSString(
 TaintOperation JS::TaintOperationConcat(JSContext* cx, const char* name,
                                         bool native, JS::HandleString arg1,
                                         JS::HandleString arg2) {
-  std::vector<std::u16string> args = taintargs(cx, arg1, arg2);
-  std::u16string whichStringsAreTainted = u"tainted:";
-  if (arg1->isTainted()) {
-    whichStringsAreTainted.append(u"L");
-  }
-  if (arg2->isTainted()) {
-    whichStringsAreTainted.append(u"R");
-  }
-  args.push_back(whichStringsAreTainted);
-  return TaintOperation(name, native, TaintLocationFromContext(cx), args);
+  return TaintOperation(name, native, TaintLocationFromContext(cx));
 }
 
 TaintOperation JS::TaintOperationConcat(JSContext* cx, const char* name,
                                         bool native, JSString* const& arg1,
                                         JSString* const& arg2) {
-  std::vector<std::u16string> args = taintargs_jsstring(cx, arg1, arg2);
-  std::u16string whichStringsAreTainted = u"tainted:";
-  if (arg1->isTainted()) {
-    whichStringsAreTainted.append(u"L");
-  }
-  if (arg2->isTainted()) {
-    whichStringsAreTainted.append(u"R");
-  }
-  args.push_back(whichStringsAreTainted);
-  return TaintOperation(name, native, TaintLocationFromContext(cx), args);
+  return TaintOperation(name, native, TaintLocationFromContext(cx));
 }
 
 TaintOperation JS::TaintOperationFromContext(JSContext* cx, const char* name,
@@ -370,49 +327,7 @@ TaintOperation JS::TaintOperationFromContext(JSContext* cx, const char* name,
 }
 
 void JS::MarkTaintedFunctionArguments(JSContext* cx, JSFunction* function,
-                                      const CallArgs& args) {
-  if (!function) return;
-
-  RootedValue name(cx);
-
-  JS::Rooted<JSAtom*> atom(cx);
-  JSAtom* ma = function->maybePartialDisplayAtom();
-  if (ma != nullptr) {
-    atom = ma;
-  } else {
-    atom = Atomize(cx, "", 0);
-  }
-  name = StringValue(atom);
-
-  RootedFunction fun(cx, function);
-
-  std::u16string sourceinfo(u"unknown");
-  if (fun->isInterpreted() && fun->hasBaseScript()) {
-    RootedScript script(cx, JSFunction::getOrCreateScript(cx, fun));
-    if (script) {
-      int lineno = script->lineno();
-      js::ScriptSource* source = script->scriptSource();
-      if (source && source->filename()) {
-        std::string filename(source->filename());
-        sourceinfo =
-            ascii2utf16(filename) + u":" + ascii2utf16(std::to_string(lineno));
-      }
-    }
-  }
-
-  TaintLocation location = TaintLocationFromContext(cx);
-  for (unsigned i = 0; i < args.length(); i++) {
-    if (args[i].isString()) {
-      RootedString arg(cx, args[i].toString());
-      if (arg->isTainted()) {
-        arg->taint().extend(
-            TaintOperation("function", location,
-                           {taintarg(cx, name), sourceinfo, taintarg(cx, i),
-                            taintarg(cx, args.length())}));
-      }
-    }
-  }
-}
+                                      const CallArgs& args) {}
 
 #if defined(JS_JITSPEW)
 void JS::MaybeSpewStringTaint(JSContext* cx, JSString* str,

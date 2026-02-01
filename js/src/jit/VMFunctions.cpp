@@ -1357,10 +1357,13 @@ JSString* StringReplace(JSContext* cx, HandleString string,
   MOZ_ASSERT(pattern);
   MOZ_ASSERT(repl);
   // Foxhound: this will propagate the taint but not add the operation.
-  // Foxhound: We have to root the string here, as we introduce the TaintOperationFromContext call, which can trigger the GC.
+  // Foxhound: We have to root the string here, as we introduce the
+  // TaintOperationFromContext call, which can trigger the GC.
   Rooted<JSString*> str(cx, str_replace_string_raw(cx, string, pattern, repl));
-  if (str && str->taint().hasTaint()) {
-    str->taint().extend(TaintOperationFromContext(cx, "replace", true, pattern, repl));
+  if (str && str->isTainted()) {
+    str->taint().extend(TaintOperation("replace", true,
+                                       TaintLocationFromContext(cx),
+                                       taintargs_jsstring(cx, str)));
   }
   return str;
 }

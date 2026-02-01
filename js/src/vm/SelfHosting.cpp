@@ -1680,196 +1680,136 @@ static bool intrinsic_ConstructorForTypedArray(JSContext* cx, unsigned argc,
 }
 
 // Foxhound: Add taint operation to JSString.
-static bool
-taint_addTaintOperation(JSContext* cx, unsigned argc, Value* vp)
-{
-    // String, operation, args...
-    CallArgs args = CallArgsFromVp(argc, vp);
+static bool taint_addTaintOperation(JSContext* cx, unsigned argc, Value* vp) {
+  // String, operation, args...
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    // check String and operations
-    MOZ_ASSERT(args.length() >= 2 && args[0].isString() && args[1].isString());
+  // check String and operations
+  MOZ_ASSERT(args.length() >= 2 && args[0].isString() && args[1].isString());
 
-    RootedString str(cx, args[0].toString());
-    if (!str) {
-        return false;
-    }
+  RootedString str(cx, args[0].toString());
+  if (!str) {
+    return false;
+  }
 
-    if(!str->isTainted()) {
-      return true;
-    }
-
-    RootedString opName(cx, args[1].toString());
-    if (!opName)
-        return false;
-
-    UniqueChars op_chars = JS_EncodeStringToUTF8(cx, opName);
-    if (!op_chars)
-        return false;
-
-    // add arguments
-    std::vector<std::u16string> taint_args;
-
-    for(size_t i = 2; i < args.length(); i++) {
-        JSString* argStr = ToString<NoGC>(cx, args[i]);
-        if (!argStr) {
-            argStr = ToString<CanGC>(cx, args[i]);
-            if (!argStr) {
-                taint_args.push_back(taintarg(cx, u""));
-            } else {
-                RootedString rs(cx, argStr);
-                taint_args.push_back(taintarg(cx, rs));
-            }
-        } else {
-            RootedString rs(cx, argStr);
-            taint_args.push_back(taintarg(cx, rs));
-        }
-    }
-
-    str->taint().extend(TaintOperation(op_chars.get(), TaintLocationFromContext(cx), taint_args));
-
+  if (!str->isTainted()) {
     return true;
+  }
+
+  RootedString opName(cx, args[1].toString());
+  if (!opName) {
+    return false;
+  }
+
+  UniqueChars opNameChars = JS_EncodeStringToUTF8(cx, opName);
+  if (!opNameChars) {
+    return false;
+  }
+
+  str->taint().extend(TaintOperation(opNameChars.get(),
+                                     TaintLocationFromContext(cx),
+                                     taintargs_jsstring(cx, str)));
+
+  return true;
 }
 
-static bool
-taint_addTaintOperation_native_full(JSContext* cx, unsigned argc, Value* vp)
-{
-    // String, operation, args...
-    CallArgs args = CallArgsFromVp(argc, vp);
+static bool taint_addTaintOperation_native_full(JSContext* cx, unsigned argc,
+                                                Value* vp) {
+  // String, operation, args...
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    // check String and operations
-    MOZ_ASSERT(args.length() >= 2 && args[0].isString() && args[1].isString());
+  // check String and operations
+  MOZ_ASSERT(args.length() >= 2 && args[0].isString() && args[1].isString());
 
-    RootedString str(cx, args[0].toString());
-    if (!str) {
-        return false;
-    }
+  RootedString str(cx, args[0].toString());
+  if (!str) {
+    return false;
+  }
 
-    if(!str->isTainted()) {
-      return true;
-    }
-
-    RootedString opName(cx, args[1].toString());
-    if (!opName)
-        return false;
-
-    UniqueChars op_chars = JS_EncodeStringToUTF8(cx, opName);
-    if (!op_chars)
-        return false;
-
-    // add arguments
-    std::vector<std::u16string> taint_args;
-
-    for(size_t i = 2; i < args.length(); i++) {
-        JSString* argStr = ToString<NoGC>(cx, args[i]);
-        if (!argStr) {
-            argStr = ToString<CanGC>(cx, args[i]);
-            if (!argStr) {
-                taint_args.push_back(taintarg(cx, u""));
-            } else {
-                RootedString rs(cx, argStr);
-                taint_args.push_back(taintarg_full(cx, rs));
-            }
-        } else {
-            RootedString rs(cx, argStr);
-            taint_args.push_back(taintarg_full(cx, rs));
-        }
-    }
-
-    str->taint().extend(TaintOperation(op_chars.get(), true, TaintLocationFromContext(cx), taint_args));
-
+  if (!str->isTainted()) {
     return true;
+  }
+
+  RootedString opName(cx, args[1].toString());
+  if (!opName) return false;
+
+  UniqueChars opNameChars = JS_EncodeStringToUTF8(cx, opName);
+  if (!opNameChars) return false;
+
+  str->taint().extend(TaintOperation(opNameChars.get(), true,
+                                     TaintLocationFromContext(cx),
+                                     taintargs_jsstring(cx, str)));
+
+  return true;
 }
 
-static bool
-taint_addTaintOperation_native(JSContext* cx, unsigned argc, Value* vp)
-{
-    // String, operation, args...
-    CallArgs args = CallArgsFromVp(argc, vp);
+static bool taint_addTaintOperation_native(JSContext* cx, unsigned argc,
+                                           Value* vp) {
+  // String, operation, args...
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    // check String and operations
-    MOZ_ASSERT(args.length() >= 2 && args[0].isString() && args[1].isString());
+  // check String and operations
+  MOZ_ASSERT(args.length() >= 2 && args[0].isString() && args[1].isString());
 
-    RootedString str(cx, args[0].toString());
-    if (!str) {
-        return false;
-    }
+  RootedString str(cx, args[0].toString());
+  if (!str) {
+    return false;
+  }
 
-    if(!str->isTainted()) {
-      return true;
-    }
-
-    RootedString opName(cx, args[1].toString());
-    if (!opName)
-        return false;
-
-    UniqueChars op_chars = JS_EncodeStringToUTF8(cx, opName);
-    if (!op_chars)
-        return false;
-
-    // add arguments
-    std::vector<std::u16string> taint_args;
-
-    for(size_t i = 2; i < args.length(); i++) {
-        JSString* argStr = ToString<NoGC>(cx, args[i]);
-        if (!argStr) {
-            argStr = ToString<CanGC>(cx, args[i]);
-            if (!argStr) {
-                taint_args.push_back(taintarg(cx, u""));
-            } else {
-                RootedString rs(cx, argStr);
-                taint_args.push_back(taintarg(cx, rs));
-            }
-        } else {
-            RootedString rs(cx, argStr);
-            taint_args.push_back(taintarg(cx, rs));
-        }
-    }
-
-    str->taint().extend(TaintOperation(op_chars.get(), true, TaintLocationFromContext(cx), taint_args));
-
+  if (!str->isTainted()) {
     return true;
+  }
+
+  RootedString opName(cx, args[1].toString());
+  if (!opName) return false;
+
+  UniqueChars opNameChars = JS_EncodeStringToUTF8(cx, opName);
+  if (!opNameChars) return false;
+
+  str->taint().extend(TaintOperation(opNameChars.get(), true,
+                                     TaintLocationFromContext(cx),
+                                     taintargs_jsstring(cx, str)));
+
+  return true;
 }
 
 // Foxhound: Returns a copy of the given string.
-static bool
-taint_copyString(JSContext* cx, unsigned argc, Value* vp)
-{
-    // String, operation, args...
-    CallArgs args = CallArgsFromVp(argc, vp);
+static bool taint_copyString(JSContext* cx, unsigned argc, Value* vp) {
+  // String, operation, args...
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    RootedString str(cx, args[0].toString());
-    if (!str) {
-        return false;
-    }
+  RootedString str(cx, args[0].toString());
+  if (!str) {
+    return false;
+  }
 
-    JSString* res = NewDependentString(cx, str, 0, str->length());
-    args.rval().setString(res);
+  JSString* res = NewDependentString(cx, str, 0, str->length());
+  args.rval().setString(res);
 
-    return true;
+  return true;
 }
 
-static bool
-taint_setTaintForSubString(JSContext* cx, unsigned argc, Value* vp)
-{
-    // dstStr, srcStr, begin, end
-    CallArgs args = CallArgsFromVp(argc, vp);
+static bool taint_setTaintForSubString(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  // dstStr, srcStr, begin, end
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    RootedString dstStr(cx, args[0].toString());
-    if (!dstStr) {
-        return false;
-    }
+  RootedString dstStr(cx, args[0].toString());
+  if (!dstStr) {
+    return false;
+  }
 
-    RootedString srcStr(cx, args[1].toString());
-    if (!srcStr) {
-        return false;
-    }
+  RootedString srcStr(cx, args[1].toString());
+  if (!srcStr) {
+    return false;
+  }
 
-    int32_t begin = args[2].toInt32();
-    int32_t end = args[3].toInt32();
+  int32_t begin = args[2].toInt32();
+  int32_t end = args[3].toInt32();
 
-    dstStr->setTaint(srcStr->Taint().safeSubTaint(begin, end));
+  dstStr->setTaint(srcStr->Taint().safeSubTaint(begin, end));
 
-    return true;
+  return true;
 }
 
 static bool intrinsic_PromiseResolve(JSContext* cx, unsigned argc, Value* vp) {
@@ -2179,7 +2119,8 @@ static const JSFunctionSpec intrinsic_functions[] = {
     // Intrinsic helper functions
     JS_FN("AddTaintOperation", taint_addTaintOperation, 2, 0),
     JS_FN("AddTaintOperationNative", taint_addTaintOperation_native, 2, 0),
-    JS_FN("AddTaintOperationNativeFull", taint_addTaintOperation_native_full, 2, 0),
+    JS_FN("AddTaintOperationNativeFull", taint_addTaintOperation_native_full, 2,
+          0),
     JS_INLINABLE_FN("ArrayBufferByteLength",
                     intrinsic_ArrayBufferByteLength<ArrayBufferObject>, 1, 0,
                     IntrinsicArrayBufferByteLength),

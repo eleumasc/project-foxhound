@@ -853,14 +853,6 @@ template <JSONStringType ST, typename ParserT>
 inline bool JSONFullParseHandler<CharT>::setStringValue(
     CharPtr start, size_t length, mozilla::Span<const CharT>&& source,
     const StringTaint& taint, const ParserT* parser) {
-  TaintOperation op("JSON.parse");
-  // Foxhound: propagate taint.
-  if (ST != JSONStringType::PropertyName && taint.hasTaint()) {
-    JSString* path = parser->CurrentJsonPath();
-    RootedString jsonPath(cx, path);
-    op = TaintOperationFromContextJSString(cx, "JSON.parse", true, jsonPath);
-  }
-
   JSString* str;
   if constexpr (ST == JSONStringType::PropertyName) {
     str = AtomizeChars(cx, start.get(), length);
@@ -875,7 +867,9 @@ inline bool JSONFullParseHandler<CharT>::setStringValue(
   // Foxhound: propagate taint.
   if (ST != JSONStringType::PropertyName && taint.hasTaint()) {
     str->setTaint(cx, taint);
-    str->taint().extend(op);
+    str->taint().extend(TaintOperation("JSON.parse", true,
+                                       TaintLocationFromContext(cx),
+                                       taintargs_jsstring(cx, str)));
   }
 
   v = JS::StringValue(str);
@@ -887,14 +881,6 @@ template <JSONStringType ST, typename ParserT>
 inline bool JSONFullParseHandler<CharT>::setStringValue(
     JSONStringBuilder& builder, mozilla::Span<const CharT>&& source,
     const ParserT* parser) {
-  TaintOperation op("JSON.parse");
-  // Foxhound: propagate taint.
-  if (ST != JSONStringType::PropertyName && builder.buffer.taint()) {
-    JSString* path = parser->CurrentJsonPath();
-    RootedString jsonPath(cx, path);
-    op = TaintOperationFromContextJSString(cx, "JSON.parse", true, jsonPath);
-  }
-
   JSString* str;
   if constexpr (ST == JSONStringType::PropertyName) {
     str = builder.buffer.finishAtom();
@@ -907,8 +893,10 @@ inline bool JSONFullParseHandler<CharT>::setStringValue(
   }
 
   // Foxhound: Add taint operation.
-  if (str->taint().hasTaint()) {
-    str->taint().extend(op);
+  if (str->isTainted()) {
+    str->taint().extend(TaintOperation("JSON.parse", true,
+                                       TaintLocationFromContext(cx),
+                                       taintargs_jsstring(cx, str)));
   }
 
   v = JS::StringValue(str);

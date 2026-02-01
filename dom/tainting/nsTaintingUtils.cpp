@@ -185,7 +185,7 @@ nsresult MarkTaintOperation(StringTaint& aTaint, const char* name) {
 static nsresult MarkTaintOperation(JSContext* cx, nsACString& str,
                                    const char* name) {
   if (str.isTainted()) {
-    auto op = GetTaintOperation(cx, name);
+    auto op = GetTaintOperation(cx, name, str);
     op.setNative();
     str.Taint().extend(op);
   }
@@ -199,7 +199,7 @@ nsresult MarkTaintOperation(nsACString& str, const char* name) {
 static nsresult MarkTaintOperation(JSContext* cx, nsAString& str,
                                    const char* name) {
   if (str.isTainted()) {
-    auto op = GetTaintOperation(cx, name);
+    auto op = GetTaintOperation(cx, name, str);
     op.setNative();
     str.Taint().extend(op);
   }
@@ -210,7 +210,7 @@ nsresult MarkTaintOperation(nsAString& str, const char* name,
                             const nsINode* node) {
   if (str.isTainted()) {
     TaintOperation op =
-        GetTaintOperation(nsContentUtils::GetCurrentJSContext(), name, node);
+        GetTaintOperation(nsContentUtils::GetCurrentJSContext(), name, str);
     op.setNative();
     str.Taint().extend(op);
   }
@@ -225,7 +225,7 @@ static nsresult MarkTaintOperation(JSContext* cx, nsAString& str,
                                    const char* name,
                                    const nsTArray<nsString>& args) {
   if (str.isTainted()) {
-    auto op = GetTaintOperation(cx, name, args);
+    auto op = GetTaintOperation(cx, name, str);
     op.setNative();
     str.Taint().extend(op);
   }
@@ -242,7 +242,7 @@ static nsresult MarkTaintOperation(JSContext* cx, nsACString& str,
                                    const char* name,
                                    const nsTArray<nsString>& args) {
   if (str.isTainted()) {
-    auto op = GetTaintOperation(cx, name, args);
+    auto op = GetTaintOperation(cx, name, str);
     op.setNative();
     str.Taint().extend(op);
   }
@@ -259,7 +259,7 @@ static nsresult MarkTaintOperation(JSContext* cx, nsCString& str,
                                    const char* name,
                                    const nsTArray<nsCString>& args) {
   if (str.isTainted()) {
-    auto op = GetTaintOperation(cx, name, args);
+    auto op = GetTaintOperation(cx, name, str);
     op.setNative();
     str.Taint().extend(op);
   }
@@ -276,7 +276,7 @@ nsresult MarkTaintOperation(nsACString& str, const char* name,
                             const nsACString& arg) {
   if (str.isTainted()) {
     auto op =
-        GetTaintOperation(nsContentUtils::GetCurrentJSContext(), name, arg);
+        GetTaintOperation(nsContentUtils::GetCurrentJSContext(), name, str);
     op.setNative();
     str.Taint().extend(op);
   }

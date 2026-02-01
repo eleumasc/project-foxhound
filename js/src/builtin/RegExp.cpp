@@ -150,10 +150,10 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
       // Foxhound: taint propagated by NewDependentString, just need
       // to add the operation here. Do this after adding to the rooted
       // array to avoid GC issues.
-      if (str->taint().hasTaint()) {
-        str->taint().extend(
-          TaintOperation("RegExp.prototype.exec", true, TaintLocationFromContext(cx),
-                         { taintarg_jsstring_full(cx, srcStr), taintarg_jsstring(cx, str), taintarg(cx, i) }));
+      if (str->isTainted()) {
+        str->taint().extend(TaintOperation("RegExp.prototype.exec", true,
+                                           TaintLocationFromContext(cx),
+                                           taintargs_jsstring(cx, str)));
       }
       arr->setDenseInitializedLength(i + 1);
       arr->initDenseElement(i, StringValue(str));

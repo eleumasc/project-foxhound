@@ -581,8 +581,9 @@ bool js::InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
   /* Invoke native functions. */
   RootedFunction fun(cx, &args.callee().as<JSFunction>());
   // Foxhound: mark tainted function call arguments for tracing purposes.
-  if (!fun->isSelfHostedOrIntrinsic() && fun->isInterpreted())
-      MarkTaintedFunctionArguments(cx, fun, args);
+  if (!fun->isSelfHostedOrIntrinsic() && fun->isInterpreted()) {
+    MarkTaintedFunctionArguments(cx, fun, args);
+  }
 
   if (fun->isNativeFun()) {
     MOZ_ASSERT_IF(construct, !fun->isConstructor());
@@ -3288,8 +3289,9 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
         }
 
         // Foxhound: mark tainted function call arguments for tracing purposes.
-        if (!fun->isSelfHostedOrIntrinsic() && fun->isInterpreted())
-            MarkTaintedFunctionArguments(cx, fun, args);
+        if (!fun->isSelfHostedOrIntrinsic() && fun->isInterpreted()) {
+          MarkTaintedFunctionArguments(cx, fun, args);
+        }
 
         // Enter the callee's realm if this is a cross-realm call. Use
         // MakeScopeExit to leave this realm on all error/JIT-return paths

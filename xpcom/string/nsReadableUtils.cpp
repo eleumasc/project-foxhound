@@ -240,8 +240,10 @@ void ToUpperCase(const nsACString& aSource, nsACString& aDest) {
   }
 
   // Foxhound: propagate taint into aDest.
+  nsString nsDest = NS_ConvertUTF8toUTF16(aDest);
+  std::u16string u16Dest(nsDest.BeginReading(), nsDest.EndReading());
   aDest.AssignTaint(aSource.Taint());
-  aDest.Taint().extend(TaintOperation("ToUpperCase", true));
+  aDest.Taint().extend(TaintOperation("ToUpperCase", true, {u16Dest}));
 }
 
 void ToLowerCase(nsACString& aCString) {
@@ -273,8 +275,10 @@ void ToLowerCase(const nsACString& aSource, nsACString& aDest) {
   }
 
   // Foxhound: propagate taint into aDest.
+  nsString nsDest = NS_ConvertUTF8toUTF16(aDest);
+  std::u16string u16Dest(nsDest.BeginReading(), nsDest.EndReading());
   aDest.AssignTaint(aSource.Taint());
-  aDest.Taint().extend(TaintOperation("ToLowerCase", true));
+  aDest.Taint().extend(TaintOperation("ToLowerCase", true, {u16Dest}));
 }
 
 void ParseString(const nsACString& aSource, char aDelimiter,

@@ -326,9 +326,10 @@ JSONToken JSONTokenizer<CharT, ParserT>::advanceAfterArrayElement() {
 template <typename CharT, typename ParserT>
 template <JSONStringType ST>
 JSONToken JSONTokenizer<CharT, ParserT>::stringToken(const CharPtr start,
-                                                     size_t length, const StringTaint& taint) {
-  if (!parser->handler.template setStringValue<ST>(start, length,
-                                                   getSource(), taint, parser)) {
+                                                     size_t length,
+                                                     const StringTaint& taint) {
+  if (!parser->handler.template setStringValue<ST>(start, length, getSource(),
+                                                   taint, parser)) {
     return JSONToken::OOM;
   }
   return JSONToken::String;
@@ -338,10 +339,11 @@ template <typename CharT, typename ParserT>
 template <JSONStringType ST>
 JSONToken JSONTokenizer<CharT, ParserT>::stringToken(
     JSONStringBuilder& builder) {
-  if (!parser->handler.template setStringValue<ST>(builder, getSource(), parser)) {
+  if (!parser->handler.template setStringValue<ST>(builder, getSource(),
+                                                   parser)) {
     return JSONToken::OOM;
   }
-  return JSONToken::String;    
+  return JSONToken::String;
 }
 
 template <typename CharT, typename ParserT>
@@ -378,7 +380,8 @@ JSONToken JSONTokenizer<CharT, ParserT>::readString() {
       size_t length = current - start;
       ptrdiff_t offset = start - begin;
       current++;
-      return stringToken<ST>(start, length, mTaint.safeSubTaint(offset, offset + length));
+      return stringToken<ST>(start, length,
+                             mTaint.safeSubTaint(offset, offset + length));
     }
 
     if (*current == '\\') {
@@ -398,7 +401,9 @@ JSONToken JSONTokenizer<CharT, ParserT>::readString() {
    */
   JSONStringBuilder builder(parser->handler.context());
   do {
-    if (start < current && !builder.append(start.get(), current.get(), mTaint.safeSubTaint(start - begin, current - begin))) {
+    if (start < current &&
+        !builder.append(start.get(), current.get(),
+                        mTaint.safeSubTaint(start - begin, current - begin))) {
       return token(JSONToken::OOM);
     }
 
@@ -782,21 +787,23 @@ void JSONFullParseHandlerAnyChar::trace(JSTracer* trc) {
 }
 
 template <typename CharT>
-bool JSONFullParseHandler<CharT>::JSONStringBuilder::append(char16_t c, const TaintFlow& taintFlow) {
+bool JSONFullParseHandler<CharT>::JSONStringBuilder::append(
+    char16_t c, const TaintFlow& taintFlow) {
   // Foxhound: add taint information for next output character.
-  buffer.taint().append(TaintRange(buffer.length(), buffer.length() + 1, taintFlow));
+  buffer.taint().append(
+      TaintRange(buffer.length(), buffer.length() + 1, taintFlow));
   return buffer.append(c);
 }
 
 template <typename CharT>
-bool JSONFullParseHandler<CharT>::JSONStringBuilder::append(const CharT* begin,
-                                                            const CharT* end,
-                                                            const StringTaint& taint) {
+bool JSONFullParseHandler<CharT>::JSONStringBuilder::append(
+    const CharT* begin, const CharT* end, const StringTaint& taint) {
   buffer.appendTaintAt(buffer.length(), taint);
   return buffer.append(begin, end);
 }
 
-JSString* JSONFullParseHandlerAnyChar::CurrentJsonPath(const Vector<StackEntry, 10>& stack) const {
+JSString* JSONFullParseHandlerAnyChar::CurrentJsonPath(
+    const Vector<StackEntry, 10>& stack) const {
   // https://www.ietf.org/archive/id/draft-goessner-dispatch-jsonpath-00.html
 
   JSStringBuilder builder(cx);
@@ -846,7 +853,6 @@ template <JSONStringType ST, typename ParserT>
 inline bool JSONFullParseHandler<CharT>::setStringValue(
     CharPtr start, size_t length, mozilla::Span<const CharT>&& source,
     const StringTaint& taint, const ParserT* parser) {
-
   TaintOperation op("JSON.parse");
   // Foxhound: propagate taint.
   if (ST != JSONStringType::PropertyName && taint.hasTaint()) {
@@ -854,7 +860,7 @@ inline bool JSONFullParseHandler<CharT>::setStringValue(
     RootedString jsonPath(cx, path);
     op = TaintOperationFromContextJSString(cx, "JSON.parse", true, jsonPath);
   }
-  
+
   JSString* str;
   if constexpr (ST == JSONStringType::PropertyName) {
     str = AtomizeChars(cx, start.get(), length);
@@ -879,8 +885,8 @@ inline bool JSONFullParseHandler<CharT>::setStringValue(
 template <typename CharT>
 template <JSONStringType ST, typename ParserT>
 inline bool JSONFullParseHandler<CharT>::setStringValue(
-    JSONStringBuilder& builder, mozilla::Span<const CharT>&& source, const ParserT* parser) {
-
+    JSONStringBuilder& builder, mozilla::Span<const CharT>&& source,
+    const ParserT* parser) {
   TaintOperation op("JSON.parse");
   // Foxhound: propagate taint.
   if (ST != JSONStringType::PropertyName && builder.buffer.taint()) {
@@ -1475,8 +1481,11 @@ class MOZ_STACK_CLASS DelegateHandler {
 
     explicit JSONStringBuilder(FrontendContext* fc) : buffer(fc) {}
 
-    bool append(char16_t c, const TaintFlow& taintFlow) { return buffer.append(c, taintFlow); }
-    bool append(const CharT* begin, const CharT* end, const StringTaint& taint) {
+    bool append(char16_t c, const TaintFlow& taintFlow) {
+      return buffer.append(c, taintFlow);
+    }
+    bool append(const CharT* begin, const CharT* end,
+                const StringTaint& taint) {
       return buffer.append(begin, end, taint);
     }
   };
@@ -1669,8 +1678,8 @@ class MOZ_STACK_CLASS DelegateParser
   using Base = JSONPerHandlerParser<CharT, HandlerT>;
 
  public:
-  DelegateParser(FrontendContext* fc, mozilla::Range<const CharT> data, const StringTaint& taint,
-                 JS::JSONParseHandler* handler)
+  DelegateParser(FrontendContext* fc, mozilla::Range<const CharT> data,
+                 const StringTaint& taint, JS::JSONParseHandler* handler)
       : Base(fc, data, taint) {
     this->handler.setDelegateHandler(handler);
   }
@@ -1702,7 +1711,8 @@ static bool ParseJSONWithHandlerImpl(const CharT* chars, uint32_t len,
   FrontendContext fc;
   // NOTE: We don't set stack quota here because JSON parser doesn't use it.
 
-  DelegateParser<CharT> parser(&fc, mozilla::Range(chars, len), EmptyTaint, handler);
+  DelegateParser<CharT> parser(&fc, mozilla::Range(chars, len), EmptyTaint,
+                               handler);
   if (!parser.parse()) {
     return false;
   }

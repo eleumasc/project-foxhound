@@ -807,6 +807,9 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   UniquePtr<SerializedStackHolder> mOriginStack;
 
   static bool sDontWarnAboutSyncXHR;
+
+ private:
+  uint32_t mRequestId = 0;
 };
 
 class MOZ_STACK_CLASS AutoDontWarnAboutSyncXHR {

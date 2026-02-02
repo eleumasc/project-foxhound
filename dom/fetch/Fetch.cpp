@@ -510,11 +510,6 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
     return nullptr;
   }
 
-  // Foxhound: Sink: Add fetch sink here...
-  nsAutoCString url;
-  request->GetUrl(url);
-  ReportTaintSink(url, "fetch.url");
-
   SafeRefPtr<InternalRequest> internalRequest = request->GetInternalRequest();
 
   // Restore information of InterceptedHttpChannel if they are passed with the

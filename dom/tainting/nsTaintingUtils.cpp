@@ -729,3 +729,34 @@ nsresult ReportTaintSink(JSContext* cx, JS::Handle<JS::Value> aValue,
 
   return NS_OK;
 }
+
+nsresult ReportTaintSink(JSContext* cx, const nsAString& str, const char* name,
+                         const nsTArray<nsString>& args) {
+  if (!nsContentUtils::IsSafeToRunScript() || !JS::CurrentGlobalOrNull(cx)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!isSinkActive(name)) {
+    return NS_OK;
+  }
+
+  JS::RootedValue argval(cx);
+  if (!mozilla::dom::ToJSValue(cx, args, &argval)) {
+    return nsresult::NS_ERROR_FAILURE;
+  }
+
+  JS::Rooted<JS::Value> strval(cx);
+  if (!mozilla::dom::ToJSValue(cx, str, &strval)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  JS_ReportTaintSink(cx, strval, name, argval);
+
+  return NS_OK;
+}
+
+nsresult ReportTaintSink(const nsAString& str, const char* name,
+                         const nsTArray<nsString>& args) {
+  return ReportTaintSink(nsContentUtils::GetCurrentJSContext(), str, name,
+                         args);
+}

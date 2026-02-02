@@ -769,7 +769,7 @@ nsresult XMLHttpRequestMainThread::CreateResponseParsedJSON(JSContext* aCx) {
     url = NS_ConvertUTF8toUTF16(cUrl);
   }
   args.AppendElement(url);
-  
+
   MarkTaintSource(string, "XMLHttpRequest.response(json)", args);
 
   // The Unicode converter has already zapped the BOM if there was one
@@ -1696,12 +1696,16 @@ void XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   // This is already handled by the other Open() method, which passes
   // username and password in as NullStrings.
 
+  mRequestId = PR_Now();
+
   // Foxhound: XMLHttpRequest.open sink
-  nsCString parsedUrlStr = parsedURL->GetSpecOrDefault();
-  nsAutoString aParsedUrlStr = NS_ConvertUTF8toUTF16(parsedUrlStr);
-  ReportTaintSink(parsedUrlStr, "XMLHttpRequest.open(url)");
-  ReportTaintSink(aUsername, "XMLHttpRequest.open(username)", aParsedUrlStr);
-  ReportTaintSink(aPassword, "XMLHttpRequest.open(password)", aParsedUrlStr);
+  nsAutoString parsedUrlStr =
+      NS_ConvertUTF8toUTF16(parsedURL->GetSpecOrDefault());
+  nsAutoString requestIdStr;
+  requestIdStr.AppendInt(mRequestId);
+  ReportTaintSink(parsedUrlStr, "XMLHttpRequest.open(url)", {requestIdStr});
+  ReportTaintSink(aUsername, "XMLHttpRequest.open(username)", parsedUrlStr);
+  ReportTaintSink(aPassword, "XMLHttpRequest.open(password)", parsedUrlStr);
 
   // Step 8
   nsAutoCString host;
@@ -2789,6 +2793,12 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
     if (timedChannel) {
       timedChannel->SetInitiatorType(u"xmlhttprequest"_ns);
     }
+
+    nsAutoCString requestIdCStr;
+    requestIdCStr.AppendInt(mRequestId);
+    rv = httpChannel->SetRequestHeader("X-Foxhound-RequestId"_ns, requestIdCStr,
+                                       false);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   return NS_OK;
@@ -3196,12 +3206,14 @@ void XMLHttpRequestMainThread::Send(
   if (aData.Value().IsUSVString()) {
     BodyExtractor<const nsAString> body(&aData.Value().GetAsUSVString());
     // Foxhound: XMLHttpRequest.send() sink
-    nsAutoString aUrl;
+    nsAutoString url;
     if (mRequestURL) {
-      nsCString url = mRequestURL->GetSpecOrDefault();
-      aUrl = NS_ConvertUTF8toUTF16(url);
+      url = NS_ConvertUTF8toUTF16(mRequestURL->GetSpecOrDefault());
     }
-    ReportTaintSink(aData.Value().GetAsUSVString(), "XMLHttpRequest.send", aUrl);
+    nsAutoString requestIdStr;
+    requestIdStr.AppendInt(mRequestId);
+    ReportTaintSink(aData.Value().GetAsUSVString(), "XMLHttpRequest.send",
+                    {url, requestIdStr});
     SendInternal(&body, true, aRv);
     return;
   }

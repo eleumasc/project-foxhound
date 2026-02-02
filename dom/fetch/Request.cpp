@@ -373,10 +373,15 @@ SafeRefPtr<Request> Request::Constructor(
     request->SetMethod(outMethod);
   }
 
-  // Foxhound:
-  nsCString cUrl;
+  uint32_t requestId = PR_Now();
+  nsAutoString requestIdStr;
+  requestIdStr.AppendInt(requestId);
+
+  // Foxhound: fetch.url sink
+  nsAutoCString cUrl;
   request->GetURL(cUrl);
-  nsString url = NS_ConvertUTF8toUTF16(cUrl);
+  nsAutoString url = NS_ConvertUTF8toUTF16(cUrl);
+  ReportTaintSink(url, "fetch.url", {requestIdStr});
 
   RefPtr<InternalHeaders> requestHeaders = request->Headers();
 
@@ -388,14 +393,13 @@ SafeRefPtr<Request> Request::Constructor(
     }
     headers = h->GetInternalHeaders();
 
-    // Foxhound:
+    // Foxhound: fetch.header(key) sink, fetch.header(value) sink
     nsTArray<InternalHeaders::Entry> headerEntries;
     headers->GetEntries(headerEntries);
-    for(InternalHeaders::Entry entry : headerEntries) {
+    for (InternalHeaders::Entry entry : headerEntries) {
       ReportTaintSink(entry.mName, "fetch.header(key)", url);
       ReportTaintSink(entry.mValue, "fetch.header(value)", url);
     }
-
   } else {
     headers = new InternalHeaders(*requestHeaders);
   }
@@ -425,6 +429,14 @@ SafeRefPtr<Request> Request::Constructor(
     return nullptr;
   }
 
+  nsAutoCString requestIdCStr;
+  requestIdCStr.AppendInt(requestId);
+  requestHeaders->Append("X-Foxhound-RequestId"_ns, requestIdCStr, aRv);
+
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+
   if ((aInit.mBody.WasPassed() && !aInit.mBody.Value().IsNull()) ||
       hasCopiedBody) {
     // HEAD and GET are not allowed to have a body.
@@ -445,9 +457,10 @@ SafeRefPtr<Request> Request::Constructor(
       nsCOMPtr<nsIInputStream> stream;
       nsAutoCString contentTypeWithCharset;
       uint64_t contentLength = 0;
-      // Foxhound:
+      // Foxhound: fetch.body sink
       if (bodyInit.IsUSVString()) {
-        ReportTaintSink(bodyInit.GetAsUSVString(), "fetch.body", url);
+        ReportTaintSink(bodyInit.GetAsUSVString(), "fetch.body",
+                        {url, requestIdStr});
       }
       aRv = ExtractByteStreamFromBody(bodyInit, getter_AddRefs(stream),
                                       contentTypeWithCharset, contentLength);

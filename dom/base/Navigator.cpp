@@ -1164,42 +1164,51 @@ BeaconStreamListener::OnDataAvailable(nsIRequest* aRequest,
 bool Navigator::SendBeacon(const nsAString& aUrl,
                            const Nullable<fetch::BodyInit>& aData,
                            ErrorResult& aRv) {
-  ReportTaintSink(aUrl, "navigator.sendBeacon(url)");
+  uint32_t requestId = PR_Now();
+  nsAutoString requestIdStr;
+  requestIdStr.AppendInt(requestId);
+
+  ReportTaintSink(aUrl, "navigator.sendBeacon(url)", {requestIdStr});
+
   if (aData.IsNull()) {
-    return SendBeaconInternal(aUrl, nullptr, eBeaconTypeOther, aRv);
+    return SendBeaconInternal(aUrl, nullptr, eBeaconTypeOther, requestId, aRv);
   }
 
   if (aData.Value().IsArrayBuffer()) {
     BodyExtractor<const ArrayBuffer> body(&aData.Value().GetAsArrayBuffer());
-    return SendBeaconInternal(aUrl, &body, eBeaconTypeArrayBuffer, aRv);
+    return SendBeaconInternal(aUrl, &body, eBeaconTypeArrayBuffer, requestId,
+                              aRv);
   }
 
   if (aData.Value().IsArrayBufferView()) {
     BodyExtractor<const ArrayBufferView> body(
         &aData.Value().GetAsArrayBufferView());
-    return SendBeaconInternal(aUrl, &body, eBeaconTypeArrayBuffer, aRv);
+    return SendBeaconInternal(aUrl, &body, eBeaconTypeArrayBuffer, requestId,
+                              aRv);
   }
 
   if (aData.Value().IsBlob()) {
     BodyExtractor<const Blob> body(&aData.Value().GetAsBlob());
-    return SendBeaconInternal(aUrl, &body, eBeaconTypeBlob, aRv);
+    return SendBeaconInternal(aUrl, &body, eBeaconTypeBlob, requestId, aRv);
   }
 
   if (aData.Value().IsFormData()) {
     BodyExtractor<const FormData> body(&aData.Value().GetAsFormData());
-    return SendBeaconInternal(aUrl, &body, eBeaconTypeOther, aRv);
+    return SendBeaconInternal(aUrl, &body, eBeaconTypeOther, requestId, aRv);
   }
 
   if (aData.Value().IsUSVString()) {
-    ReportTaintSink(aData.Value().GetAsUSVString(), "navigator.sendBeacon(body)", aUrl);
+    ReportTaintSink(aData.Value().GetAsUSVString(),
+                    "navigator.sendBeacon(body)",
+                    {nsString(aUrl), requestIdStr});
     BodyExtractor<const nsAString> body(&aData.Value().GetAsUSVString());
-    return SendBeaconInternal(aUrl, &body, eBeaconTypeOther, aRv);
+    return SendBeaconInternal(aUrl, &body, eBeaconTypeOther, requestId, aRv);
   }
 
   if (aData.Value().IsURLSearchParams()) {
     BodyExtractor<const URLSearchParams> body(
         &aData.Value().GetAsURLSearchParams());
-    return SendBeaconInternal(aUrl, &body, eBeaconTypeOther, aRv);
+    return SendBeaconInternal(aUrl, &body, eBeaconTypeOther, requestId, aRv);
   }
 
   MOZ_CRASH("Invalid data type.");
@@ -1208,7 +1217,7 @@ bool Navigator::SendBeacon(const nsAString& aUrl,
 
 bool Navigator::SendBeaconInternal(const nsAString& aUrl,
                                    BodyExtractorBase* aBody, BeaconType aType,
-                                   ErrorResult& aRv) {
+                                   uint32_t aRequestId, ErrorResult& aRv) {
   if (!mWindow) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return false;
@@ -1297,6 +1306,12 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
     rv = httpChannel->SetRequestMethod("POST"_ns);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
+
+  nsAutoCString requestIdCStr;
+  requestIdCStr.AppendInt(aRequestId);
+  rv = httpChannel->SetRequestHeader("X-Foxhound-RequestId"_ns, requestIdCStr,
+                                     false);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(channel);
   if (p) {

@@ -127,4 +127,10 @@ nsresult ReportTaintSink(JSContext* cx, JS::Handle<JS::Value> aValue,
 nsresult ReportTaintSink(JSContext* cx, JS::Handle<JS::Value> aValue,
                          const char* name, const nsAString& arg);
 
+nsresult ReportTaintSink(JSContext* cx, const nsAString& str, const char* name,
+                         const nsTArray<nsString>& args);
+
+nsresult ReportTaintSink(const nsAString& str, const char* name,
+                         const nsTArray<nsString>& args);
+
 #endif /* nsTaintingUtils_h__ */

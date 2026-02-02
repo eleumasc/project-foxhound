@@ -576,6 +576,7 @@ void LSObject::GetItem(const nsAString& aKey, nsAString& aResult,
   // Foxhound: localStorage.getItem source
   nsTArray<nsString> args;
   args.AppendElement(aKey);
+  args.AppendElement(result);
   MarkTaintSourceStorageValue(aResult, "localStorage.getItem", args);
 }
 

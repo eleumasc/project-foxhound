@@ -69,6 +69,7 @@ void PartitionedLocalStorage::GetItem(const nsAString& aKey, nsAString& aResult,
   // Foxhound: localStorage.getItem source
   nsTArray<nsString> args;
   args.AppendElement(aKey);
+  args.AppendElement(aResult);
   MarkTaintSourceStorageValue(aResult, "localStorage.getItem", args);
 }
 
@@ -105,7 +106,6 @@ void PartitionedLocalStorage::SetItem(const nsAString& aKey,
   if (rv == NS_SUCCESS_DOM_NO_OPERATION) {
     return;
   }
-
 }
 
 void PartitionedLocalStorage::RemoveItem(const nsAString& aKey,

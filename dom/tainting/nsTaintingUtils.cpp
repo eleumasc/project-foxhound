@@ -517,6 +517,7 @@ nsresult MarkTaintSourceCookieString(nsAString& aCookieString,
       args.AppendElement(VoidString());
       valueStart = start;
     }
+    args.AppendElement(Substring(aCookieString, valueStart, end - valueStart));
 
     MarkTaintSourceStorageValue(aCookieString, name, args, valueStart, end);
   }

@@ -67,7 +67,9 @@ void PartitionedLocalStorage::GetItem(const nsAString& aKey, nsAString& aResult,
   mCache->GetItem(aKey, aResult);
 
   // Foxhound: localStorage.getItem source
-  MarkTaintSource(aResult, "localStorage.getItem", aKey);
+  nsTArray<nsString> args;
+  args.AppendElement(aKey);
+  MarkTaintSourceStorageValue(aResult, "localStorage.getItem", args);
 }
 
 void PartitionedLocalStorage::GetSupportedNames(nsTArray<nsString>& aKeys) {

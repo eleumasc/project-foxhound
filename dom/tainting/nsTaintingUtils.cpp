@@ -518,13 +518,36 @@ nsresult MarkTaintSourceCookieString(nsAString& aCookieString,
       valueStart = start;
     }
 
-    TaintOperation op = GetTaintOperation(cx, name, args);
-    op.setSource();
-    op.setNative();
-    aCookieString.Taint().overlay(valueStart, end, op);
+    MarkTaintSourceStorageValue(aCookieString, name, args, valueStart, end);
   }
 
   return NS_OK;
+}
+
+nsresult MarkTaintSourceStorageValue(nsAString& aStorageValue, const char* name,
+                                     const nsTArray<nsString>& baseArgs,
+                                     uint32_t start, uint32_t end) {
+  auto* cx = nsContentUtils::GetCurrentJSContext();
+
+  for (uint32_t i = start, j = 0; i < end; ++i, ++j) {
+    nsTArray<nsString> args = baseArgs.Clone();
+    nsString index;
+    index.AppendInt(j);
+    args.AppendElement(index);
+
+    TaintOperation op = GetTaintOperation(cx, name, args);
+    op.setSource();
+    op.setNative();
+    aStorageValue.Taint().overlay(i, i + 1, op);
+  }
+
+  return NS_OK;
+}
+
+nsresult MarkTaintSourceStorageValue(nsAString& aStorageValue, const char* name,
+                                     const nsTArray<nsString>& baseArgs) {
+  return MarkTaintSourceStorageValue(aStorageValue, name, baseArgs, 0,
+                                     (int32_t)aStorageValue.Length());
 }
 
 nsresult ReportTaintSink(JSContext* cx, const nsAString& str, const char* name,

@@ -104,7 +104,9 @@ void LocalStorage::GetItem(const nsAString& aKey, nsAString& aResult,
   aRv = mCache->GetItem(this, aKey, aResult);
 
   // Foxhound: localStorage.getItem source
-  MarkTaintSource(aResult, "localStorage.getItem", aKey);
+  nsTArray<nsString> args;
+  args.AppendElement(aKey);
+  MarkTaintSourceStorageValue(aResult, "localStorage.getItem", args);
 }
 
 void LocalStorage::SetItem(const nsAString& aKey, const nsAString& aData,

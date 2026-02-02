@@ -489,8 +489,6 @@ nsresult MarkTaintSourceAttribute(mozilla::dom::DOMString& str,
 
 nsresult MarkTaintSourceCookieString(nsAString& aCookieString,
                                      const char* name) {
-  auto* cx = nsContentUtils::GetCurrentJSContext();
-
   int32_t pos = 0;
   int32_t len = aCookieString.Length();
 

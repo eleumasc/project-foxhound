@@ -5074,8 +5074,7 @@ JS_PUBLIC_API void JS_ReportTaintSink(JSContext* cx, JS::HandleString str,
                        firstRange.flow().source().name(), sink);
 
   // Extend the taint flow to include the sink function
-  str->taint().extend(TaintOperation(sink, true, TaintLocationFromContext(cx),
-                                     taintargs_jsstring(cx, str)));
+  str->taint().extend(TaintOperationFromContext(cx, sink, true, arg, true));
 
   // Trigger a custom event that can be caught by an extension.
   // To simplify things, this part is implemented in JavaScript. Since we don't

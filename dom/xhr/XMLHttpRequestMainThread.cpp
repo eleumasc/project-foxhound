@@ -635,25 +635,25 @@ void XMLHttpRequestMainThread::GetResponseText(DOMString& aResponseText,
                                                ErrorResult& aRv) {
   MOZ_DIAGNOSTIC_ASSERT(!mForWorker);
 
-  #if (DEBUG_E2E_TAINTING)
-    if(mResponseText.Taint().hasTaint()) {
-      puts("!!!!! GetResponseText with non empty Taint !!!!!");
-      PrintTaint(mResponseText.Taint());
-    } else {
-      puts("!!!!! GettResponseText with empty Taint !!!!!");
-    }
-  #endif
+#if (DEBUG_E2E_TAINTING)
+  if (mResponseText.Taint().hasTaint()) {
+    puts("!!!!! GetResponseText with non empty Taint !!!!!");
+    PrintTaint(mResponseText.Taint());
+  } else {
+    puts("!!!!! GettResponseText with empty Taint !!!!!");
+  }
+#endif
 
   XMLHttpRequestStringSnapshot snapshot;
   GetResponseText(snapshot, aRv);
-    #if (DEBUG_E2E_TAINTING)
-    if(snapshot.Taint().hasTaint()) {
-      puts("!!!!! GetResponseText with tainted snapshot !!!!!");
-      PrintTaint(snapshot.Taint());
-    } else {
-      puts("!!!!! GetResponseText with untainted snapshot !!!!!");
-    }
-    #endif
+#if (DEBUG_E2E_TAINTING)
+  if (snapshot.Taint().hasTaint()) {
+    puts("!!!!! GetResponseText with tainted snapshot !!!!!");
+    PrintTaint(snapshot.Taint());
+  } else {
+    puts("!!!!! GetResponseText with untainted snapshot !!!!!");
+  }
+#endif
   if (aRv.Failed()) {
     return;
   }
@@ -663,14 +663,14 @@ void XMLHttpRequestMainThread::GetResponseText(DOMString& aResponseText,
     return;
   }
 
-      #if (DEBUG_E2E_TAINTING)
-    if(aResponseText.Taint().hasTaint()) {
-      puts("!!!!! GetResponseText with tainted snapshot !!!!!");
-      PrintTaint(aResponseText.Taint());
-    } else {
-      puts("!!!!! GetResponseText with untainted snapshot !!!!!");
-    }
-    #endif
+#if (DEBUG_E2E_TAINTING)
+  if (aResponseText.Taint().hasTaint()) {
+    puts("!!!!! GetResponseText with tainted snapshot !!!!!");
+    PrintTaint(aResponseText.Taint());
+  } else {
+    puts("!!!!! GetResponseText with untainted snapshot !!!!!");
+  }
+#endif
 
   // Foxhound: XMLHttpRequest.response source
   nsTArray<nsString> args;
@@ -731,9 +731,10 @@ void XMLHttpRequestMainThread::GetResponseText(
                  mState == XMLHttpRequest_Binding::DONE,
              "Unexpected mResponseBodyDecodedPos");
   Span<const uint8_t> span = mResponseBody;
-  aRv = AppendToResponseText(span.From(mResponseBodyDecodedPos),
-                             mResponseBody.Taint().subtaint(mResponseBodyDecodedPos, -1),
-                             mState == XMLHttpRequest_Binding::DONE);
+  aRv = AppendToResponseText(
+      span.From(mResponseBodyDecodedPos),
+      mResponseBody.Taint().subtaint(mResponseBodyDecodedPos, -1),
+      mState == XMLHttpRequest_Binding::DONE);
   if (aRv.Failed()) {
     return;
   }
@@ -773,7 +774,8 @@ nsresult XMLHttpRequestMainThread::CreateResponseParsedJSON(JSContext* aCx) {
 
   // The Unicode converter has already zapped the BOM if there was one
   JS::Rooted<JS::Value> value(aCx);
-  if (!JS_ParseJSON(aCx, string.BeginReading(), string.Length(), string.Taint(), &value)) {
+  if (!JS_ParseJSON(aCx, string.BeginReading(), string.Length(), string.Taint(),
+                    &value)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1776,8 +1778,8 @@ void XMLHttpRequestMainThread::SetOriginAttributes(
  * "Copy" from a stream.
  */
 nsresult XMLHttpRequestMainThread::HandleStreamInput(
-    void* closure, const char* fromRawSegment,
-    uint32_t toOffset, uint32_t count, const StringTaint& taint, uint32_t* writeCount) {
+    void* closure, const char* fromRawSegment, uint32_t toOffset,
+    uint32_t count, const StringTaint& taint, uint32_t* writeCount) {
   XMLHttpRequestMainThread* xmlHttpRequest =
       static_cast<XMLHttpRequestMainThread*>(closure);
   if (!xmlHttpRequest || !writeCount) {
@@ -1814,9 +1816,9 @@ nsresult XMLHttpRequestMainThread::HandleStreamInput(
                                               fallible)) {
       return NS_ERROR_OUT_OF_MEMORY;
     } else {
-      #if (DEBUG_E2E_TAINTING)
-        puts("!!!!! Appending Taint to response body !!!!!");
-      #endif
+#if (DEBUG_E2E_TAINTING)
+      puts("!!!!! Appending Taint to response body !!!!!");
+#endif
       xmlHttpRequest->mResponseBody.AppendTaint(taint);
     }
   } else if (xmlHttpRequest->mResponseType ==
@@ -1829,27 +1831,27 @@ nsresult XMLHttpRequestMainThread::HandleStreamInput(
                "We shouldn't be parsing a doc here");
     rv = xmlHttpRequest->AppendToResponseText(
         AsBytes(Span(fromRawSegment, count)), taint);
-        #if (DEBUG_E2E_TAINTING)
-          if(taint.hasTaint()) {
-            puts("!!!!! Appending non empty Taint to response text !!!!!");
-          } else {
-            puts("!!!!! Appending empty Taint to response text !!!!!");
-          }
-        #endif
+#if (DEBUG_E2E_TAINTING)
+    if (taint.hasTaint()) {
+      puts("!!!!! Appending non empty Taint to response text !!!!!");
+    } else {
+      puts("!!!!! Appending empty Taint to response text !!!!!");
+    }
+#endif
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   }
 
   if (xmlHttpRequest->mFlagParseBody) {
-    // Give the same data to the parser.
-    #if (DEBUG_E2E_TAINTING)
-      if(taint.hasTaint()) {
-        puts("!!!!!Parsing Body with ByteInputStream and non empty Taint !!!!!");
-      } else {
-        puts("!!!!!Parsing Body with ByteInputStream and empty Taint !!!!!");
-      }
-    #endif
+// Give the same data to the parser.
+#if (DEBUG_E2E_TAINTING)
+    if (taint.hasTaint()) {
+      puts("!!!!!Parsing Body with ByteInputStream and non empty Taint !!!!!");
+    } else {
+      puts("!!!!!Parsing Body with ByteInputStream and empty Taint !!!!!");
+    }
+#endif
 
     // We need to wrap the data in a new lightweight stream and pass that
     // to the parser, because calling ReadSegments() recursively on the same
@@ -1882,34 +1884,26 @@ nsresult XMLHttpRequestMainThread::HandleStreamInput(
   return rv;
 }
 
-nsresult
-XMLHttpRequestMainThread::StreamReaderFunc(nsITaintawareInputStream* in,
-                                 void* closure,
-                                 const char* fromRawSegment,
-                                 uint32_t toOffset,
-                                 uint32_t count,
-                                 const StringTaint& aTaint,
-                                 uint32_t *writeCount)
-{
-  #if (DEBUG_E2E_TAINTING)
-    if(aTaint.hasTaint()) {
-      puts("!!!!! StreamReaderFunc with  non empty Taint !!!!!");
-    } else {
-      puts("!!!!! StreamReaderFunc with empty Taint !!!!!");
-    }
-  #endif
-  return HandleStreamInput(closure, fromRawSegment, toOffset, count, aTaint, writeCount);
+nsresult XMLHttpRequestMainThread::StreamReaderFunc(
+    nsITaintawareInputStream* in, void* closure, const char* fromRawSegment,
+    uint32_t toOffset, uint32_t count, const StringTaint& aTaint,
+    uint32_t* writeCount) {
+#if (DEBUG_E2E_TAINTING)
+  if (aTaint.hasTaint()) {
+    puts("!!!!! StreamReaderFunc with  non empty Taint !!!!!");
+  } else {
+    puts("!!!!! StreamReaderFunc with empty Taint !!!!!");
+  }
+#endif
+  return HandleStreamInput(closure, fromRawSegment, toOffset, count, aTaint,
+                           writeCount);
 }
 
-nsresult
-XMLHttpRequestMainThread::StreamReaderFuncNoTaint(nsIInputStream* in,
-                                        void* closure,
-                                        const char* fromRawSegment,
-                                        uint32_t toOffset,
-                                        uint32_t count,
-                                        uint32_t *writeCount)
-{
-  return HandleStreamInput(closure, fromRawSegment, toOffset, count, EmptyTaint, writeCount);
+nsresult XMLHttpRequestMainThread::StreamReaderFuncNoTaint(
+    nsIInputStream* in, void* closure, const char* fromRawSegment,
+    uint32_t toOffset, uint32_t count, uint32_t* writeCount) {
+  return HandleStreamInput(closure, fromRawSegment, toOffset, count, EmptyTaint,
+                           writeCount);
 }
 
 namespace {
@@ -2076,15 +2070,21 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest* request,
 
   nsCOMPtr<nsITaintawareInputStream> taintInputStream(do_QueryInterface(inStr));
   if (!taintInputStream) {
-    #if (DEBUG_E2E_TAINTING)
-      puts("!!!!! NO taint-aware input stream available in XMLHttpRequest::OnDataAvailable !!!!!");
-    #endif
-    rv = inStr->ReadSegments(StreamReaderFuncNoTaint, (void*)this, count, &totalRead);
+#if (DEBUG_E2E_TAINTING)
+    puts(
+        "!!!!! NO taint-aware input stream available in "
+        "XMLHttpRequest::OnDataAvailable !!!!!");
+#endif
+    rv = inStr->ReadSegments(StreamReaderFuncNoTaint, (void*)this, count,
+                             &totalRead);
   } else {
-    #if (DEBUG_E2E_TAINTING)
-      puts("+++++ Taint-aware input stream available in XMLHttpRequest::OnDataAvailable +++++");
-    #endif
-    rv = taintInputStream->TaintedReadSegments(StreamReaderFunc, (void*)this, count, &totalRead);
+#if (DEBUG_E2E_TAINTING)
+    puts(
+        "+++++ Taint-aware input stream available in "
+        "XMLHttpRequest::OnDataAvailable +++++");
+#endif
+    rv = taintInputStream->TaintedReadSegments(StreamReaderFunc, (void*)this,
+                                               count, &totalRead);
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
@@ -3483,8 +3483,10 @@ void XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
     nsCString cUrl = mRequestURL->GetSpecOrDefault();
     url = NS_ConvertUTF8toUTF16(cUrl);
   }
-  ReportTaintSink(NS_ConvertUTF8toUTF16(value), "XMLHttpRequest.setRequestHeader(value)", url);
-  ReportTaintSink(NS_ConvertUTF8toUTF16(aName), "XMLHttpRequest.setRequestHeader(name)", url);
+  ReportTaintSink(NS_ConvertUTF8toUTF16(value),
+                  "XMLHttpRequest.setRequestHeader(value)", url);
+  ReportTaintSink(NS_ConvertUTF8toUTF16(aName),
+                  "XMLHttpRequest.setRequestHeader(name)", url);
 
   // Step 5
   bool isPrivilegedCaller = IsSystemXHR();
@@ -3509,7 +3511,6 @@ void XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
   } else {
     mAuthorRequestHeaders.MergeOrSet(aName, value);
   }
-
 }
 
 void XMLHttpRequestMainThread::SetTimeout(uint32_t aTimeout, ErrorResult& aRv) {

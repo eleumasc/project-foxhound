@@ -17,61 +17,79 @@
 
 #include "jsapi.h"
 
-
 // Get a taint operation
 TaintOperation GetTaintOperation(const char* name);
 
 TaintLocation GetTaintLocation();
 
 // Extend the taintflow
-nsresult MarkTaintOperation(nsAString &str, const char* name);
-nsresult MarkTaintOperation(nsAString &str, const char* name, const nsINode* node);
-nsresult MarkTaintOperation(nsACString &str, const char* name);
-nsresult MarkTaintOperation(nsACString &str, const char* name, const nsACString &arg);
-nsresult MarkTaintOperation(nsAString &str, const char* name, const nsTArray<nsString> &arg);
-nsresult MarkTaintOperation(nsACString &str, const char* name, const nsTArray<nsString> &arg);
-nsresult MarkTaintOperation(nsCString &str, const char* name, const nsTArray<nsCString> &arg);
+nsresult MarkTaintOperation(nsAString& str, const char* name);
+nsresult MarkTaintOperation(nsAString& str, const char* name,
+                            const nsINode* node);
+nsresult MarkTaintOperation(nsACString& str, const char* name);
+nsresult MarkTaintOperation(nsACString& str, const char* name,
+                            const nsACString& arg);
+nsresult MarkTaintOperation(nsAString& str, const char* name,
+                            const nsTArray<nsString>& arg);
+nsresult MarkTaintOperation(nsACString& str, const char* name,
+                            const nsTArray<nsString>& arg);
+nsresult MarkTaintOperation(nsCString& str, const char* name,
+                            const nsTArray<nsCString>& arg);
 nsresult MarkTaintOperation(StringTaint& aTaint, const char* name);
 
 // Foxhound: Add taint source information to a string
-nsresult MarkTaintSource(nsAString &str, const char* name);
-nsresult MarkTaintSource(nsACString &str, const char* name);
+nsresult MarkTaintSource(nsAString& str, const char* name);
+nsresult MarkTaintSource(nsACString& str, const char* name);
 
 // Foxhound: Add taint source information to a string
-nsresult MarkTaintSource(nsAString &str, const char* name, const nsAString &arg);
+nsresult MarkTaintSource(nsAString& str, const char* name,
+                         const nsAString& arg);
 
-nsresult MarkTaintSource(nsAString &str, const char* name, const nsTArray<nsString> &arg);
+nsresult MarkTaintSource(nsAString& str, const char* name,
+                         const nsTArray<nsString>& arg);
 
-nsresult MarkTaintSourceElement(nsAString &str, const char* name, const nsINode* node);
-
-// Foxhound: Add taint source information to a string
-nsresult MarkTaintSource(mozilla::dom::DOMString &str, const char* name);
-
-// Foxhound: Add taint source information to a string
-nsresult MarkTaintSource(mozilla::dom::DOMString &str, const char* name, const nsAString &arg);
-
-nsresult MarkTaintSource(mozilla::dom::DOMString &str, const char* name, const nsTArray<nsString> &arg);
-
-nsresult MarkTaintSourceElement(mozilla::dom::DOMString &str, const char* name, const nsINode* node);
+nsresult MarkTaintSourceElement(nsAString& str, const char* name,
+                                const nsINode* node);
 
 // Foxhound: Add taint source information to a string
-nsresult MarkTaintSourceAttribute(nsAString &str, const char* name, const mozilla::dom::Element* node,
-                                  const nsAString &attr);
+nsresult MarkTaintSource(mozilla::dom::DOMString& str, const char* name);
 
-nsresult MarkTaintSourceAttribute(mozilla::dom::DOMString &str, const char* name, const mozilla::dom::Element* node,
-                                  const nsAString &attr);
+// Foxhound: Add taint source information to a string
+nsresult MarkTaintSource(mozilla::dom::DOMString& str, const char* name,
+                         const nsAString& arg);
 
-nsresult MarkTaintSource(JSContext* aCx, JS::MutableHandle<JS::Value> aValue, const char* name);
+nsresult MarkTaintSource(mozilla::dom::DOMString& str, const char* name,
+                         const nsTArray<nsString>& arg);
 
-nsresult MarkTaintSource(JSContext* aCx, JS::MutableHandle<JS::Value> aValue, const char* name, const nsAString &arg);
+nsresult MarkTaintSourceElement(mozilla::dom::DOMString& str, const char* name,
+                                const nsINode* node);
+
+// Foxhound: Add taint source information to a string
+nsresult MarkTaintSourceAttribute(nsAString& str, const char* name,
+                                  const mozilla::dom::Element* node,
+                                  const nsAString& attr);
+
+nsresult MarkTaintSourceAttribute(mozilla::dom::DOMString& str,
+                                  const char* name,
+                                  const mozilla::dom::Element* node,
+                                  const nsAString& attr);
+
+nsresult MarkTaintSource(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+                         const char* name);
+
+nsresult MarkTaintSource(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+                         const char* name, const nsAString& arg);
 
 nsresult MarkTaintSource(JSContext* aCx, JSString* str, const char* name);
 
-nsresult MarkTaintSource(JSContext* aCx, JSString* str, const char* name, const nsAString &arg);
+nsresult MarkTaintSource(JSContext* aCx, JSString* str, const char* name,
+                         const nsAString& arg);
 
-nsresult MarkTaintSource(TaintFlow &flow, const char* name, const nsAString &arg);
+nsresult MarkTaintSource(TaintFlow& flow, const char* name,
+                         const nsAString& arg);
 
-nsresult MarkTaintSourceCookieString(nsAString& aCookieString, const char* name);
+nsresult MarkTaintSourceCookieString(nsAString& aCookieString,
+                                     const char* name);
 
 nsresult MarkTaintSourceStorageValue(nsAString& aStorageValue, const char* name,
                                      const nsTArray<nsString>& baseArgs,
@@ -81,25 +99,32 @@ nsresult MarkTaintSourceStorageValue(nsAString& aStorageValue, const char* name,
                                      const nsTArray<nsString>& baseArgs);
 
 // Foxhound: Report taint flows into DOM related sinks.
-nsresult ReportTaintSink(JSContext *cx, const nsAString &str, const char* name);
+nsresult ReportTaintSink(JSContext* cx, const nsAString& str, const char* name);
 
 // Foxhound: Report taint flows into DOM related sinks.
-nsresult ReportTaintSink(const nsAString &str, const char* name);
+nsresult ReportTaintSink(const nsAString& str, const char* name);
 
-nsresult ReportTaintSink(const nsAString &str, const char* name, const nsINode* node);
+nsresult ReportTaintSink(const nsAString& str, const char* name,
+                         const nsINode* node);
 
-nsresult ReportTaintSink(const nsACString &str, const char* name);
+nsresult ReportTaintSink(const nsACString& str, const char* name);
 
-nsresult ReportTaintSink(JSContext *cx, const nsAString &str, const char* name, const nsAString &arg);
+nsresult ReportTaintSink(JSContext* cx, const nsAString& str, const char* name,
+                         const nsAString& arg);
 
-nsresult ReportTaintSink(JSContext *cx, const nsACString &str, const char* name, const nsAString &arg);
+nsresult ReportTaintSink(JSContext* cx, const nsACString& str, const char* name,
+                         const nsAString& arg);
 
-nsresult ReportTaintSink(const nsAString &str, const char* name, const nsAString &arg);
+nsresult ReportTaintSink(const nsAString& str, const char* name,
+                         const nsAString& arg);
 
-nsresult ReportTaintSink(const nsACString &str, const char* name, const nsAString &arg);
+nsresult ReportTaintSink(const nsACString& str, const char* name,
+                         const nsAString& arg);
 
-nsresult ReportTaintSink(JSContext* cx, JS::Handle<JS::Value> aValue, const char* name);
+nsresult ReportTaintSink(JSContext* cx, JS::Handle<JS::Value> aValue,
+                         const char* name);
 
-nsresult ReportTaintSink(JSContext* cx, JS::Handle<JS::Value> aValue, const char* name, const nsAString &arg);
+nsresult ReportTaintSink(JSContext* cx, JS::Handle<JS::Value> aValue,
+                         const char* name, const nsAString& arg);
 
 #endif /* nsTaintingUtils_h__ */

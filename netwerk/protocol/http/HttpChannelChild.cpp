@@ -12,6 +12,7 @@
 #include "nsHttp.h"
 #include "nsICacheEntry.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/HttpRequestId.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
@@ -2174,7 +2175,7 @@ HttpChannelChild::AsyncOpen(nsIStreamListener* aListener) {
 
   nsAutoCString requestIdCStr;
   if (NS_FAILED(GetRequestHeader("X-Foxhound-RequestId"_ns, requestIdCStr))) {
-    uint32_t requestId = PR_Now();
+    uint32_t requestId = mozilla::NextHttpRequestId();
     requestIdCStr.AppendInt(requestId);
     SetRequestHeader("X-Foxhound-RequestId"_ns, requestIdCStr, false);
   }

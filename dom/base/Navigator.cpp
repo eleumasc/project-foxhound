@@ -13,6 +13,7 @@
 #include "nsMimeTypeArray.h"
 #include "mozilla/Components.h"
 #include "mozilla/ContentBlockingNotifier.h"
+#include "mozilla/HttpRequestId.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/FetchBinding.h"
@@ -1164,7 +1165,7 @@ BeaconStreamListener::OnDataAvailable(nsIRequest* aRequest,
 bool Navigator::SendBeacon(const nsAString& aUrl,
                            const Nullable<fetch::BodyInit>& aData,
                            ErrorResult& aRv) {
-  uint32_t requestId = PR_Now();
+  uint32_t requestId = mozilla::NextHttpRequestId();
   nsAutoString requestIdStr;
   requestIdStr.AppendInt(requestId);
 

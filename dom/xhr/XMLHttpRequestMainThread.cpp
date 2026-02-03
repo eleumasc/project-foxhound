@@ -41,6 +41,7 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/HttpRequestId.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/LoadContext.h"
 #include "mozilla/MemoryReporting.h"
@@ -1696,7 +1697,7 @@ void XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   // This is already handled by the other Open() method, which passes
   // username and password in as NullStrings.
 
-  mRequestId = PR_Now();
+  mRequestId = mozilla::NextHttpRequestId();
 
   // Foxhound: XMLHttpRequest.open sink
   nsAutoString parsedUrlStr =

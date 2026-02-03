@@ -13,6 +13,7 @@
 #include "nsTaintingUtils.h"
 
 #include "mozilla/ErrorResult.h"
+#include "mozilla/HttpRequestId.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/Headers.h"
 #include "mozilla/dom/Fetch.h"
@@ -373,7 +374,7 @@ SafeRefPtr<Request> Request::Constructor(
     request->SetMethod(outMethod);
   }
 
-  uint32_t requestId = PR_Now();
+  uint32_t requestId = mozilla::NextHttpRequestId();
   nsAutoString requestIdStr;
   requestIdStr.AppendInt(requestId);
 

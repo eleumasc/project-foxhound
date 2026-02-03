@@ -68,9 +68,9 @@ std::u16string JS::taintarg(JSContext* cx, HandleString str) {
 
   js::UniquePtr<char16_t, JS::FreePolicy> buf(cx->pod_malloc<char16_t>(len));
   js::CopyChars(buf.get(), *linear);
-  if (len > MAX_ARG_LENGTH) {
-    return std::u16string(buf.get(), MAX_ARG_LENGTH);
-  }
+  // if (len > MAX_ARG_LENGTH) {
+  //   return std::u16string(buf.get(), MAX_ARG_LENGTH);
+  // }
   return std::u16string(buf.get(), len);
 }
 
@@ -84,9 +84,9 @@ std::u16string JS::taintarg_jsstring(JSContext* cx,
 
   js::UniquePtr<char16_t, JS::FreePolicy> buf(cx->pod_malloc<char16_t>(len));
   js::CopyChars(buf.get(), *str);
-  if (len > MAX_ARG_LENGTH) {
-    return std::u16string(buf.get(), MAX_ARG_LENGTH);
-  }
+  // if (len > MAX_ARG_LENGTH) {
+  //   return std::u16string(buf.get(), MAX_ARG_LENGTH);
+  // }
   return std::u16string(buf.get(), len);
 }
 

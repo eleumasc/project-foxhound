@@ -1,11 +1,17 @@
 #include "HttpRequestId.h"
 
 #include "mozilla/Atomics.h"
+#include "base/process_util.h"
 
 namespace mozilla {
 
-static Atomic<uint32_t> sNextHttpRequestId{1};
+static Atomic<uint32_t> sNextCurrentProcHttpRequestId{1};
 
-uint32_t NextHttpRequestId() { return sNextHttpRequestId++; }
+void NextHttpRequestId(nsACString& aRequestId) {
+  aRequestId.Truncate();
+  aRequestId.AppendInt(base::GetCurrentProcId());
+  aRequestId.Append(':');
+  aRequestId.AppendInt(sNextCurrentProcHttpRequestId++);
+}
 
 }  // namespace mozilla

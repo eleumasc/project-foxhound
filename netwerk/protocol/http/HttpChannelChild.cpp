@@ -12,7 +12,6 @@
 #include "nsHttp.h"
 #include "nsICacheEntry.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/HttpRequestId.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
@@ -2172,13 +2171,6 @@ NS_IMETHODIMP
 HttpChannelChild::AsyncOpen(nsIStreamListener* aListener) {
   AUTO_PROFILER_LABEL("HttpChannelChild::AsyncOpen", NETWORK);
   LOG(("HttpChannelChild::AsyncOpen [this=%p uri=%s]\n", this, mSpec.get()));
-
-  nsAutoCString requestIdCStr;
-  if (NS_FAILED(GetRequestHeader("X-Foxhound-RequestId"_ns, requestIdCStr))) {
-    uint32_t requestId = mozilla::NextHttpRequestId();
-    requestIdCStr.AppendInt(requestId);
-    SetRequestHeader("X-Foxhound-RequestId"_ns, requestIdCStr, false);
-  }
 
   nsresult rv = AsyncOpenInternal(aListener);
   if (NS_FAILED(rv)) {

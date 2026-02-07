@@ -1165,11 +1165,11 @@ BeaconStreamListener::OnDataAvailable(nsIRequest* aRequest,
 bool Navigator::SendBeacon(const nsAString& aUrl,
                            const Nullable<fetch::BodyInit>& aData,
                            ErrorResult& aRv) {
-  uint32_t requestId = mozilla::NextHttpRequestId();
-  nsAutoString requestIdStr;
-  requestIdStr.AppendInt(requestId);
+  nsAutoCString requestId;
+  mozilla::NextHttpRequestId(requestId);
 
-  ReportTaintSink(aUrl, "navigator.sendBeacon(url)", {requestIdStr});
+  ReportTaintSink(aUrl, "navigator.sendBeacon(url)",
+                  {NS_ConvertUTF8toUTF16(requestId)});
 
   if (aData.IsNull()) {
     return SendBeaconInternal(aUrl, nullptr, eBeaconTypeOther, requestId, aRv);
@@ -1201,7 +1201,7 @@ bool Navigator::SendBeacon(const nsAString& aUrl,
   if (aData.Value().IsUSVString()) {
     ReportTaintSink(aData.Value().GetAsUSVString(),
                     "navigator.sendBeacon(body)",
-                    {nsString(aUrl), requestIdStr});
+                    {nsString(aUrl), NS_ConvertUTF8toUTF16(requestId)});
     BodyExtractor<const nsAString> body(&aData.Value().GetAsUSVString());
     return SendBeaconInternal(aUrl, &body, eBeaconTypeOther, requestId, aRv);
   }
@@ -1218,7 +1218,8 @@ bool Navigator::SendBeacon(const nsAString& aUrl,
 
 bool Navigator::SendBeaconInternal(const nsAString& aUrl,
                                    BodyExtractorBase* aBody, BeaconType aType,
-                                   uint32_t aRequestId, ErrorResult& aRv) {
+                                   const nsACString& aRequestId,
+                                   ErrorResult& aRv) {
   if (!mWindow) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return false;
@@ -1308,9 +1309,7 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
-  nsAutoCString requestIdCStr;
-  requestIdCStr.AppendInt(aRequestId);
-  rv = httpChannel->SetRequestHeader("X-Foxhound-RequestId"_ns, requestIdCStr,
+  rv = httpChannel->SetRequestHeader("X-Foxhound-RequestId"_ns, aRequestId,
                                      false);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 

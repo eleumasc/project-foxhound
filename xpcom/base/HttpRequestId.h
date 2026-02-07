@@ -3,9 +3,11 @@
 
 #include <stdint.h>
 
+#include "nsString.h"
+
 namespace mozilla {
 
-uint32_t NextHttpRequestId();
+void NextHttpRequestId(nsACString& aRequestId);
 
 }  // namespace mozilla
 

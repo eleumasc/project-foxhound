@@ -374,15 +374,14 @@ SafeRefPtr<Request> Request::Constructor(
     request->SetMethod(outMethod);
   }
 
-  uint32_t requestId = mozilla::NextHttpRequestId();
-  nsAutoString requestIdStr;
-  requestIdStr.AppendInt(requestId);
+  nsAutoCString requestId;
+  mozilla::NextHttpRequestId(requestId);
 
   // Foxhound: fetch.url sink
   nsAutoCString cUrl;
   request->GetURL(cUrl);
   nsAutoString url = NS_ConvertUTF8toUTF16(cUrl);
-  ReportTaintSink(url, "fetch.url", {requestIdStr});
+  ReportTaintSink(url, "fetch.url", {NS_ConvertUTF8toUTF16(requestId)});
 
   RefPtr<InternalHeaders> requestHeaders = request->Headers();
 
@@ -430,9 +429,7 @@ SafeRefPtr<Request> Request::Constructor(
     return nullptr;
   }
 
-  nsAutoCString requestIdCStr;
-  requestIdCStr.AppendInt(requestId);
-  requestHeaders->Append("X-Foxhound-RequestId"_ns, requestIdCStr, aRv);
+  requestHeaders->Append("X-Foxhound-RequestId"_ns, requestId, aRv);
 
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
@@ -461,7 +458,7 @@ SafeRefPtr<Request> Request::Constructor(
       // Foxhound: fetch.body sink
       if (bodyInit.IsUSVString()) {
         ReportTaintSink(bodyInit.GetAsUSVString(), "fetch.body",
-                        {url, requestIdStr});
+                        {url, NS_ConvertUTF8toUTF16(requestId)});
       }
       aRv = ExtractByteStreamFromBody(bodyInit, getter_AddRefs(stream),
                                       contentTypeWithCharset, contentLength);

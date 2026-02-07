@@ -9,6 +9,7 @@
 
 #include <inttypes.h>
 
+#include "mozilla/HttpRequestId.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/dom/nsCSPContext.h"
@@ -6718,6 +6719,13 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
+  if (!mRequestHead.HasHeader(nsHttp::X_Foxhound_RequestId)) {
+    nsAutoCString requestId;
+    mozilla::NextHttpRequestId(requestId);
+    rv = mRequestHead.SetHeader(nsHttp::X_Foxhound_RequestId, requestId, false);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
+
   if (WaitingForTailUnblock()) {
     // This channel is marked as Tail and is part of a request context
     // that has positive number of non-tailed requestst, hence this channel
@@ -9177,14 +9185,17 @@ class OnTransportStatusAsyncEvent : public Runnable {
 NS_IMETHODIMP
 nsHttpChannel::OnDataAvailable(nsIRequest* request, nsIInputStream* input,
                                uint64_t offset, uint32_t count) {
-
 #if (DEBUG_E2E_TAINTING)
   // Foxhound: see if there's taint information available.
   nsCOMPtr<nsITaintawareInputStream> taintInputStream(do_QueryInterface(input));
   if (!taintInputStream) {
-    puts("!!!!! NO taint-aware input stream available in nsHttpChannel::OnDataAvailable !!!!!");
+    puts(
+        "!!!!! NO taint-aware input stream available in "
+        "nsHttpChannel::OnDataAvailable !!!!!");
   } else {
-    puts("+++++ Taint-aware input stream available in nsHttpChannel::OnDataAvailable +++++");
+    puts(
+        "+++++ Taint-aware input stream available in "
+        "nsHttpChannel::OnDataAvailable +++++");
   }
 #endif
   nsresult rv;

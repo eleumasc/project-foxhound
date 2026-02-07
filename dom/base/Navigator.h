@@ -276,7 +276,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   enum BeaconType { eBeaconTypeBlob, eBeaconTypeArrayBuffer, eBeaconTypeOther };
 
   bool SendBeaconInternal(const nsAString& aUrl, BodyExtractorBase* aBody,
-                          BeaconType aType, uint32_t aRequestId,
+                          BeaconType aType, const nsACString& aRequestId,
                           ErrorResult& aRv);
 
   nsIDocShell* GetDocShell() const {

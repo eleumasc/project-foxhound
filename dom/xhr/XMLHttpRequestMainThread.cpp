@@ -1697,14 +1697,13 @@ void XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   // This is already handled by the other Open() method, which passes
   // username and password in as NullStrings.
 
-  mRequestId = mozilla::NextHttpRequestId();
+  mozilla::NextHttpRequestId(mRequestId);
 
   // Foxhound: XMLHttpRequest.open sink
   nsAutoString parsedUrlStr =
       NS_ConvertUTF8toUTF16(parsedURL->GetSpecOrDefault());
-  nsAutoString requestIdStr;
-  requestIdStr.AppendInt(mRequestId);
-  ReportTaintSink(parsedUrlStr, "XMLHttpRequest.open(url)", {requestIdStr});
+  ReportTaintSink(parsedUrlStr, "XMLHttpRequest.open(url)",
+                  {NS_ConvertUTF8toUTF16(mRequestId)});
   ReportTaintSink(aUsername, "XMLHttpRequest.open(username)", parsedUrlStr);
   ReportTaintSink(aPassword, "XMLHttpRequest.open(password)", parsedUrlStr);
 
@@ -2795,9 +2794,7 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
       timedChannel->SetInitiatorType(u"xmlhttprequest"_ns);
     }
 
-    nsAutoCString requestIdCStr;
-    requestIdCStr.AppendInt(mRequestId);
-    rv = httpChannel->SetRequestHeader("X-Foxhound-RequestId"_ns, requestIdCStr,
+    rv = httpChannel->SetRequestHeader("X-Foxhound-RequestId"_ns, mRequestId,
                                        false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -3211,10 +3208,8 @@ void XMLHttpRequestMainThread::Send(
     if (mRequestURL) {
       url = NS_ConvertUTF8toUTF16(mRequestURL->GetSpecOrDefault());
     }
-    nsAutoString requestIdStr;
-    requestIdStr.AppendInt(mRequestId);
     ReportTaintSink(aData.Value().GetAsUSVString(), "XMLHttpRequest.send",
-                    {url, requestIdStr});
+                    {url, NS_ConvertUTF8toUTF16(mRequestId)});
     SendInternal(&body, true, aRv);
     return;
   }

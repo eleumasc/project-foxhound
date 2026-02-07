@@ -114,5 +114,7 @@ HTTP_ATOM(X_Firefox_Http3, "X-Firefox-Http3")
 HTTP_ATOM(X_Frame_Options, "X-Frame-Options")
 // Foxhound: end2end taint information header
 HTTP_ATOM(X_Taint, "X-Taint")
+// Foxhound: requestId header
+HTTP_ATOM(X_Foxhound_RequestId, "X-Foxhound-RequestId")
 
 // methods are case sensitive and do not use atom table

@@ -809,7 +809,7 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   static bool sDontWarnAboutSyncXHR;
 
  private:
-  uint32_t mRequestId = 0;
+  nsAutoCString mRequestId;
 };
 
 class MOZ_STACK_CLASS AutoDontWarnAboutSyncXHR {

@@ -8325,7 +8325,8 @@ bool nsContentUtils::IsCORSSafelistedRequestHeader(const nsACString& aName,
          (aName.LowerCaseEqualsLiteral("range") &&
           nsContentUtils::IsAllowedNonCorsRange(aValue)) ||
          (StaticPrefs::network_http_idempotencyKey_enabled() &&
-          aName.LowerCaseEqualsLiteral("idempotency-key"));
+          aName.LowerCaseEqualsLiteral("idempotency-key")) ||
+         (aName.LowerCaseEqualsLiteral("x-foxhound-requestid"));
 }
 
 mozilla::LogModule* nsContentUtils::ResistFingerprintingLog() {

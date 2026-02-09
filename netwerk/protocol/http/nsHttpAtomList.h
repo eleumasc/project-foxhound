@@ -116,5 +116,7 @@ HTTP_ATOM(X_Frame_Options, "X-Frame-Options")
 HTTP_ATOM(X_Taint, "X-Taint")
 // Foxhound: requestId header
 HTTP_ATOM(X_Foxhound_RequestId, "X-Foxhound-RequestId")
+// Foxhound: redirectCount header
+HTTP_ATOM(X_Foxhound_RedirectCount, "X-Foxhound-RedirectCount")
 
 // methods are case sensitive and do not use atom table

@@ -6726,6 +6726,13 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
+  {
+    nsAutoCString redirectCount;
+    redirectCount.AppendInt(mRedirectCount);
+    rv = mRequestHead.SetHeader(nsHttp::X_Foxhound_RedirectCount, redirectCount, false);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
+
   if (WaitingForTailUnblock()) {
     // This channel is marked as Tail and is part of a request context
     // that has positive number of non-tailed requestst, hence this channel
